@@ -1,10 +1,7 @@
 from fastapi import FastAPI
 
 from app.routes import router
-from database.database import (
-    bulk_insert_characters,
-    create_db_and_tables,
-)
+from database.database import bulk_insert_characters, create_db_and_tables
 from scraper.scraper import fetch_all_characters
 
 app = FastAPI()

@@ -17,9 +17,6 @@ connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, connect_args=connect_args)
 
 
-
-
-
 def bulk_insert_characters(characters: list[Character]):
     session = get_session()
     session.bulk_save_objects(characters)

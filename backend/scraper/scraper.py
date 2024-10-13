@@ -47,12 +47,17 @@ def extract_character_data(character_page: str) -> dict:
         curr = []
         for element in parsed_content:
             if (text := element.text.strip()) and not (
-                    text.startswith("See also: ") or text.startswith("Main article: ")
+                text.startswith("See also: ") or text.startswith("Main article: ")
             ):
                 if element.name == "h2":
                     if len(curr) > 1:
                         chunks.append(curr)
-                    clean = text.replace("[]", "").replace(":", "").replace(" ", "_").lower()
+                    clean = (
+                        text.replace("[]", "")
+                        .replace(":", "")
+                        .replace(" ", "_")
+                        .lower()
+                    )
                     if clean == "in_other_media":  # Stop parsing at irrelevant sections
                         break
                     curr = [clean]
@@ -71,7 +76,9 @@ def extract_character_data(character_page: str) -> dict:
     return data
 
 
-async def fetch_character_details(client: httpx.AsyncClient, url: str, name: str) -> Character:
+async def fetch_character_details(
+    client: httpx.AsyncClient, url: str, name: str
+) -> Character:
     """Fetch and parse character details from the individual character page."""
     character_page = await fetch_page(client, url)
     character_data = extract_character_data(character_page)
@@ -79,7 +86,9 @@ async def fetch_character_details(client: httpx.AsyncClient, url: str, name: str
     return Character(**character_data)
 
 
-async def fetch_characters_by_letter(client: httpx.AsyncClient, wiki_url: str, letter: str, seen_character_urls: set) -> list[Character]:
+async def fetch_characters_by_letter(
+    client: httpx.AsyncClient, wiki_url: str, letter: str, seen_character_urls: set
+) -> list[Character]:
     """Fetch and parse all characters for a specific letter category."""
     base_url = f"{wiki_url}/wiki/Category:Characters?from={letter}"
     category_page = await fetch_page(client, base_url)
@@ -107,8 +116,9 @@ async def fetch_all_characters() -> list[Character]:
 
     async with httpx.AsyncClient() as client:
         for letter in tqdm(letters[:1]):
-            characters = await fetch_characters_by_letter(client, wiki_url, letter, seen_character_urls)
+            characters = await fetch_characters_by_letter(
+                client, wiki_url, letter, seen_character_urls
+            )
             all_characters.extend(characters)
 
     return all_characters
-

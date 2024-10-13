@@ -7,9 +7,10 @@ dotenv.load_dotenv()
 api_key = os.environ["MISTRAL_API_KEY"]
 
 from typing import List
-from langchain_mistralai import MistralAIEmbeddings
+
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_mistralai import MistralAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 
 from database.database import get_characters
@@ -73,7 +74,7 @@ def build():
 def retrieve():
     vectordb = Chroma(
         persist_directory="data/vectordb",
-        embedding_function=MistralAIEmbeddings(model="mistral-embed")
+        embedding_function=MistralAIEmbeddings(model="mistral-embed"),
     )
     retriever = vectordb.as_retriever(search_kwargs={"k": 10})
 
