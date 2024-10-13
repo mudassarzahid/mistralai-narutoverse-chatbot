@@ -1,13 +1,8 @@
-import re
-import string
 from typing import Optional
 
-import httpx
-from bs4 import BeautifulSoup, SoupStrainer
 from sqlalchemy import func
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlmodel import Session, SQLModel, create_engine, select
-from tqdm import tqdm
 
 from datamodels.models import Character
 
