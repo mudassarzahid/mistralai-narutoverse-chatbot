@@ -21,14 +21,10 @@ def create_character(character: Character, session: SessionDep) -> Character:
 
 
 @router.get("/characters")
-def get_characters(
-    request: Request,
-    session: SessionDep = None,
-) -> Any:
+def get_characters(request: Request, session: SessionDep) -> list[dict[str, Any]]:
     params = GetCharactersQueryParams.from_request(request)
-    columns = [getattr(Character, col) for col in params.columns]
     result = session.exec(
-        select(*columns)
+        select(*params.columns)
         .order_by(*params.order_by)
         .offset(params.offset)
         .limit(params.limit)
@@ -37,18 +33,18 @@ def get_characters(
     rows = []
     for row in result:
         if type(row) is Row:
-            rows.append(dict(zip(params.columns, row)))
+            rows.append(row._asdict())
         else:
             # If only one column is selected the row does not contain column information
-            rows.append({params.columns[0]: row})
+            rows.append({params.columns[0].key: row})
 
     return rows
 
 
 @router.get("/characters/search")
 def search_characters(
-    request: Request,
-    session: SessionDep,
+        request: Request,
+        session: SessionDep,
 ) -> list[dict[str, Any]]:
     filters = dict(request.query_params)
     characters = search_characters(filters=filters, model=Character)

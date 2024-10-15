@@ -4,6 +4,7 @@ from fastapi import Query, Request
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel
 from sqlalchemy import JSON, Column, SQLColumnExpression, func
+from sqlalchemy.orm import InstrumentedAttribute
 from sqlmodel import Field, SQLModel
 
 
@@ -13,8 +14,8 @@ class QueryParams(BaseModel):
 
 
 class GetCharactersQueryParams(QueryParams):
-    columns: list[str] | None = None
-    order_by: list[SQLColumnExpression] | None = None
+    columns: list[SQLColumnExpression | InstrumentedAttribute] | None = None
+    order_by: list[SQLColumnExpression | InstrumentedAttribute] | None = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -31,9 +32,9 @@ class GetCharactersQueryParams(QueryParams):
                 f"{columns=} must be a subset of {valid_columns=}."
             )
         if not columns:
-            params["columns"] = valid_columns
+            params["columns"] = [getattr(Character, col) for col in valid_columns]
         else:
-            params["columns"] = columns
+            params["columns"] = [getattr(Character, col) for col in columns]
 
         # order by conditions
         order_by_conditions = request.query_params.getlist("order_by")
