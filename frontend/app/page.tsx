@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { SearchIcon } from "@/components/icons";
 import { Character } from "@/types";
+import { subtitle, title } from "@/components/primitives";
 
 function truncateString(text: string, maxLength: number = 150): string {
   let truncated = text.substring(0, maxLength);
@@ -22,12 +23,22 @@ export default function Home() {
 
   useEffect(() => {
     fetch(
-      "http://localhost:8080/characters?columns=id&columns=summary&columns=image_url&columns=name&sort_by=relevance",
+      "http://localhost:8080/characters?columns=id&columns=summary&columns=image_url&columns=name&order_by=relevance&limit=100",
     ).then((response) => response.json().then((data) => setCharacters(data)));
   }, []);
 
   return characters ? (
     <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
+      <div className="inline-block max-w-xl text-center justify-center">
+        <span className={title()}>Chat with your&nbsp;</span>
+        <span className={title({ color: "yellow" })}>
+          favorite NarutoVerse&nbsp;
+        </span>
+        <span className={title()}>characters!</span>
+        <div className={subtitle({ class: "mt-4" })}>
+          Beautiful, fast and modern React UI library.
+        </div>
+      </div>
       <div className="min-w-96 text-center justify-center">
         <Autocomplete
           aria-label="Select a character"
@@ -81,7 +92,9 @@ export default function Home() {
             <AutocompleteItem
               key={character.id!}
               textValue={character.name}
-              onClick={() => router.push("/chat")}
+              onClick={() => {
+                router.push(`/chat?characterId=${character.id}`);
+              }}
             >
               <div className="flex justify-between items-center">
                 <div className="flex gap-2 items-center">
