@@ -1,21 +1,26 @@
+"use client";
 import { Autocomplete, AutocompleteItem, Avatar } from "@nextui-org/react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { SearchIcon } from "./icons";
 
 import { Character } from "@/types";
+
 function truncateString(text: string, maxLength: number = 150): string {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 }
-export default function CharacterSearch({
-  characters,
-}: {
-  characters: Character[];
-}) {
+export default function CharacterSearch() {
+  const [characters, setCharacters] = useState<Character[]>();
   const router = useRouter();
 
-  return (
+  useEffect(() => {
+    fetch(
+      "http://localhost:8080/characters?columns=id&columns=summary&columns=image_url&columns=name&order_by=relevance&limit=100",
+    ).then((response) => response.json().then((data) => setCharacters(data)));
+  }, []);
+
+  return characters ? (
     <div className="min-w-96 text-center justify-center">
       <Autocomplete
         aria-label="Select a character"
@@ -93,5 +98,7 @@ export default function CharacterSearch({
         )}
       </Autocomplete>
     </div>
+  ) : (
+    <></>
   );
 }
