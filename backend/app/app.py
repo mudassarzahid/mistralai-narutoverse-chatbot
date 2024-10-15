@@ -8,8 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.routes import router
-from database.database import bulk_insert_characters, create_db_and_tables, is_db_empty
-from scraper.scraper import NarutoWikiScraper
 
 app = FastAPI()
 app.include_router(router)
@@ -48,15 +46,6 @@ async def validation_exception_handler(
             }
         ),
     )
-
-
-@app.on_event("startup")
-async def on_startup():
-    create_db_and_tables()
-    if is_db_empty():
-        scraper = NarutoWikiScraper()
-        characters = await scraper.fetch_all_characters()
-        bulk_insert_characters(characters)
 
 
 app.include_router(router)

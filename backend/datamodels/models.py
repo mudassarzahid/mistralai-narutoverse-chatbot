@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any, Optional
 
 from fastapi import Query, Request
 from fastapi.exceptions import RequestValidationError
@@ -10,12 +10,12 @@ from sqlmodel import Field, SQLModel
 
 class QueryParams(BaseModel):
     offset: int = 0
-    limit: Annotated[int, Query(le=2000)] = 2000
+    limit: Annotated[int, Query(le=100)] = 100
 
 
 class GetCharactersQueryParams(QueryParams):
-    columns: list[SQLColumnExpression | InstrumentedAttribute] | None = None
-    order_by: list[SQLColumnExpression | InstrumentedAttribute] | None = None
+    columns: Optional[list[SQLColumnExpression | InstrumentedAttribute]] = None
+    order_by: Optional[list[SQLColumnExpression | InstrumentedAttribute]] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -56,17 +56,19 @@ class GetCharactersQueryParams(QueryParams):
 class CharacterData(BaseModel):
     text: str
     tag_1: str
-    tag_2: str | None = Field(default=None)
-    tag_3: str | None = Field(default=None)
+    tag_2: Optional[str] = Field(default=None)
+    tag_3: Optional[str] = Field(default=None)
 
 
 class Character(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)  # auto-incremented
     name: str = Field(index=True)
-    href: str | None = Field(default=None, index=True)
-    image_url: str | None = Field(default=None)
-    summary: str | None = Field(default=None)
-    data: list[CharacterData] = Field(default_factory=list, sa_column=Column(JSON))
+    href: str = Field(default=None, index=True)
+    image_url: Optional[str] = Field(default=None)
+    summary: str = Field(default=None)
+    data: list[CharacterData] = Field(
+        default_factory=list[dict[str, Any]], sa_column=Column(JSON)
+    )
 
 
 class Story(SQLModel, table=True):

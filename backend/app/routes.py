@@ -1,70 +1,38 @@
-from typing import Annotated, Any
+from http import HTTPStatus
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import Row
-from sqlmodel import Session, select
+from fastapi import APIRouter, Request
 
-from database.database import get_session, search_characters
+from database.database import Database
 from datamodels.models import Character, GetCharactersQueryParams
 
 router = APIRouter()
+db = Database()
 
-SessionDep = Annotated[Session, Depends(get_session)]
+
+@router.on_event("startup")
+async def on_startup():
+    db.create_db_and_tables()
+    await db.scrape_all_characters()
 
 
 @router.post("/characters/")
-def create_character(character: Character, session: SessionDep) -> Character:
-    session.add(character)
-    session.commit()
-    session.refresh(character)
-    return character
+def create_character(character: Character) -> Character:
+    return db.create(character)
 
 
 @router.get("/characters")
-def get_characters(request: Request, session: SessionDep) -> list[dict[str, Any]]:
+def get_characters(request: Request) -> list[dict[str, Any]]:
     params = GetCharactersQueryParams.from_request(request)
-    result = session.exec(
-        select(*params.columns)
-        .order_by(*params.order_by)
-        .offset(params.offset)
-        .limit(params.limit)
-    ).all()
-
-    rows = []
-    for row in result:
-        if type(row) is Row:
-            rows.append(row._asdict())
-        else:
-            # If only one column is selected the row does not contain column information
-            rows.append({params.columns[0].key: row})
-
-    return rows
-
-
-@router.get("/characters/search")
-def search_characters(
-        request: Request,
-        session: SessionDep,
-) -> list[dict[str, Any]]:
-    filters = dict(request.query_params)
-    characters = search_characters(filters=filters, model=Character)
-
-    return characters
+    return db.get(params)
 
 
 @router.get("/characters/{character_id}")
-def read_character(character_id: int, session: SessionDep) -> Character:
-    character = session.get(Character, character_id)
-    if not character:
-        raise HTTPException(status_code=404, detail="Character not found")
-    return character
+def read_character(character_id: int) -> Character:
+    return db.get_by_id(character_id, Character)
 
 
 @router.delete("/characters/{character_id}")
-def delete_character(character_id: int, session: SessionDep):
-    character = session.get(Character, character_id)
-    if not character:
-        raise HTTPException(status_code=404, detail="Character not found")
-    session.delete(character)
-    session.commit()
-    return {"ok": True}
+def delete_character(character_id: int):
+    db.delete_by_id(character_id, Character)
+    return {"status": HTTPStatus.ACCEPTED}
