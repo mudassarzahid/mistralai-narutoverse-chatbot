@@ -1,4 +1,3 @@
-import json
 import re
 import string
 from typing import Any
@@ -133,7 +132,9 @@ class NarutoWikiScraper:
                         clean = re.sub(r"\[\d+]", "", text)  # Remove reference marks
                         curr_text.append(clean)
                         if not summary:
-                            summary = clean  # First paragraph as summary
+                            summary = re.sub(
+                                r"\([^)]*\)", "", clean
+                            )  # First paragraph as summary
 
             # After loop ends, add remaining text
             if curr_text:

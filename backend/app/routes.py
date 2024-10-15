@@ -1,11 +1,9 @@
-from typing import Annotated, Any, Sequence
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import column, text
-from sqlalchemy.orm import load_only
 from sqlmodel import Session, select
 
-from database.database import get_characters, get_session
+from database.database import get_session, search_characters
 from datamodels.models import Character, GetCharactersQueryParams
 
 router = APIRouter()
@@ -49,7 +47,7 @@ def search_characters(
     session: SessionDep,
 ) -> list[dict[str, Any]]:
     filters = dict(request.query_params)
-    characters = get_characters(filters=filters, model=Character)
+    characters = search_characters(filters=filters, model=Character)
 
     return characters
 

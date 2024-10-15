@@ -9,7 +9,7 @@ from sqlmodel import Field, SQLModel
 
 class QueryParams(BaseModel):
     offset: int = 0
-    limit: Annotated[int, Query(le=100)] = 100
+    limit: Annotated[int, Query(le=2000)] = 2000
 
 
 class GetCharactersQueryParams(QueryParams):

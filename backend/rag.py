@@ -1,20 +1,18 @@
 import os
-
-import dotenv
-
-# Load environment variables
-dotenv.load_dotenv()
-api_key = os.environ["MISTRAL_API_KEY"]
-
 from typing import List
 
+import dotenv
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_mistralai import MistralAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 
-from database.database import get_characters
+from database.database import search_characters
 from datamodels.models import Character
+
+# Load environment variables
+dotenv.load_dotenv()
+api_key = os.environ["MISTRAL_API_KEY"]
 
 
 class CharacterDataLoader:
@@ -24,7 +22,7 @@ class CharacterDataLoader:
 
     def load_characters(self) -> List[Document]:
         # Fetch characters from the database
-        characters = get_characters(self.filters, Character, self.limit)
+        characters = search_characters(self.filters, Character, self.limit)
 
         # Convert characters to Langchain Document format
         documents = []
@@ -100,7 +98,7 @@ def retrieve():
     retriever = vectordb.as_retriever(search_kwargs={"k": 5})
 
     # Define the query
-    query = "What man does Sasuke love?"
+    query = "Where does Sasuke live?"
 
     # Use the retriever to find the most relevant documents
     relevant_docs = retriever.invoke(query)

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import InstrumentedAttribute
@@ -18,7 +18,7 @@ def bulk_insert_characters(characters: list[Character]) -> None:
     session.commit()
 
 
-def get_characters(
+def search_characters(
     filters: dict[str, str],
     model: SQLModel,
 ) -> list[dict[str, Any]]:
