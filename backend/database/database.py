@@ -1,10 +1,10 @@
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import func
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlmodel import Session, SQLModel, create_engine, select
 
-from datamodels.models import Character
+from datamodels.models import Character, CharacterData
 
 sqlite_file_name = "database/database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
@@ -12,23 +12,39 @@ connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, connect_args=connect_args)
 
 
-def bulk_insert_characters(characters: list[Character]):
+def bulk_insert_characters(characters: list[Character]) -> None:
     session = get_session()
     session.bulk_save_objects(characters)
     session.commit()
 
 
 def get_characters(
-    filters: dict[str, str], model: SQLModel, limit: Optional[int] = None
-) -> list[Character]:
+    filters: dict[str, str],
+    model: SQLModel,
+) -> list[dict[str, Any]]:
     session = get_session()
     # Start the query
     statement = select(model)
 
     # List of dynamic filters to apply
     filter_conditions = []
+    get_details = False
+    limit = 100
+    offset = 0
 
+    # TODO use pydantic validation
     for column_filter, value in filters.items():
+        if column_filter == "get_details":
+            if value.lower() == "true":
+                get_details = True
+            continue
+        if column_filter == "limit":
+            limit = int(value)
+            continue
+        if column_filter == "offset":
+            offset = int(value)
+            continue
+
         if "." in column_filter:
             column_name, operation = column_filter.split(".")
         else:
@@ -70,12 +86,38 @@ def get_characters(
     if limit:
         statement = statement.limit(limit)
 
-    # Execute query and return results
-    return session.exec(statement).all()
+    if offset:
+        statement = statement.offset(offset)
+
+    # Execute the query to get characters
+    characters = session.exec(statement).all()
+
+    result = []
+    for character in characters:
+        if get_details:
+            # Query the CharacterData table for related data
+            data_statement = select(CharacterData).where(
+                CharacterData.character_id == character.id
+            )
+            character_data = session.exec(data_statement).all()
+
+            # Add character and related details (if any) to the result
+            result.append({"character": character, "details": character_data})
+        else:
+            result.append(character)
+
+    return result
 
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+
+
+def is_db_empty():
+    session = get_session()
+    character_count = session.exec(select(Character)).all()
+
+    return len(character_count) == 0
 
 
 def get_session():

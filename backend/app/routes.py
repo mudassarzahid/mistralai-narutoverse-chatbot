@@ -1,10 +1,12 @@
-from typing import Annotated
+from typing import Annotated, Any, Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import column, text
+from sqlalchemy.orm import load_only
 from sqlmodel import Session, select
 
-from database.database import get_session
-from datamodels.models import Character
+from database.database import get_characters, get_session
+from datamodels.models import Character, GetCharactersQueryParams
 
 router = APIRouter()
 
@@ -19,13 +21,36 @@ def create_character(character: Character, session: SessionDep) -> Character:
     return character
 
 
-@router.get("/characters/")
-def read_characters(
+@router.get("/characters")
+def get_characters(
+    request: Request,
+    session: SessionDep = None,
+) -> Any:
+    params = GetCharactersQueryParams.from_request(request)
+    columns = [getattr(Character, col) for col in params.columns]
+    result = session.exec(
+        select(*columns).offset(params.offset).limit(params.limit)
+    ).all()
+
+    rows = []
+    for row in result:
+        # If only one column is selected the row type is string
+        if type(row) is str:
+            rows.append({params.columns[0]: row})
+        else:
+            rows.append(dict(zip(params.columns, row)))
+
+    return rows
+
+
+@router.get("/characters/search")
+def search_characters(
+    request: Request,
     session: SessionDep,
-    offset: int = 0,
-    limit: Annotated[int, Query(le=100)] = 100,
-) -> list[Character]:
-    characters = session.exec(select(Character).offset(offset).limit(limit)).all()
+) -> list[dict[str, Any]]:
+    filters = dict(request.query_params)
+    characters = get_characters(filters=filters, model=Character)
+
     return characters
 
 

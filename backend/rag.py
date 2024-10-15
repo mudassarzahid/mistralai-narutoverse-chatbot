@@ -29,23 +29,44 @@ class CharacterDataLoader:
         # Convert characters to Langchain Document format
         documents = []
         for character in characters:
-            data = character.model_dump(
-                exclude_none=True, exclude={"id", "image_url", "href"}
-            )
-            string = ""
-            for key, value in data.items():
-                string += (
-                    f"{key.replace('_', ' ').replace(' Ii', 'II').title()}: {value}\n"
+            documents.append(
+                Document(
+                    page_content=character["character"].summary,
+                    metadata={
+                        "name": character["character"].name,
+                        "source": "sqlite_database",
+                        "character_id": character["character"].id,
+                        "tag_1": "Summary",
+                        "tag_2": "None",
+                        "tag_3": "None",
+                    },
                 )
-            metadata = {"source": "sqlite_database", "character_id": character.id}
-            documents.append(Document(page_content=string[:-1], metadata=metadata))
+            )
+
+            for section in character["details"]:
+                documents.append(
+                    Document(
+                        page_content=section.text,
+                        metadata={
+                            "name": character["character"].name,
+                            "source": "sqlite_database",
+                            "character_id": character["character"].id,
+                            "tag_1": section.tag_1,
+                            "tag_2": section.tag_2 or "None",
+                            "tag_3": section.tag_2 or "None",
+                        },
+                    )
+                )
 
         return documents
 
 
 def build():
     # Define filters for the database query
-    filters = {"name": "Sasuke Uchiha"}  # Example filter to get Sasuke
+    filters = {
+        "name": "Sasuke Uchiha",
+        "get_details": "True",
+    }  # Example filter to get Sasuke
     limit = 10  # Set a limit if needed
 
     # Initialize the character data loader
@@ -65,9 +86,9 @@ def build():
 
     # Create embeddings using OpenAI and store them in Chroma vector database
     Chroma.from_documents(
-        [split_documents[0]],
+        split_documents,
         persist_directory="data/vectordb",
-        embedding=MistralAIEmbeddings(model="mistral-embed"),  # api_key=api_key),
+        embedding=MistralAIEmbeddings(model="mistral-embed", api_key=api_key),
     )
 
 
@@ -76,10 +97,10 @@ def retrieve():
         persist_directory="data/vectordb",
         embedding_function=MistralAIEmbeddings(model="mistral-embed"),
     )
-    retriever = vectordb.as_retriever(search_kwargs={"k": 10})
+    retriever = vectordb.as_retriever(search_kwargs={"k": 5})
 
     # Define the query
-    query = "Sasuke"
+    query = "What man does Sasuke love?"
 
     # Use the retriever to find the most relevant documents
     relevant_docs = retriever.invoke(query)
@@ -87,6 +108,8 @@ def retrieve():
     print(relevant_docs)
     for doc in relevant_docs:
         print(doc.page_content)
+        print("----")
 
 
+# build()
 retrieve()

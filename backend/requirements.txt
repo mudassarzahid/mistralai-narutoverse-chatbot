@@ -8,3 +8,5 @@ langchain-mistralai
 sqlmodel~=0.0.22
 beautifulsoup4~=4.12.3
 SQLAlchemy~=2.0.35
+pydantic~=2.9.2
+ujson
