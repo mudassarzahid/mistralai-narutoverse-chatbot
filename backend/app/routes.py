@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import Row
 from sqlmodel import Session, select
 
 from database.database import get_session, search_characters
@@ -27,16 +28,19 @@ def get_characters(
     params = GetCharactersQueryParams.from_request(request)
     columns = [getattr(Character, col) for col in params.columns]
     result = session.exec(
-        select(*columns).offset(params.offset).limit(params.limit)
+        select(*columns)
+        .order_by(*params.order_by)
+        .offset(params.offset)
+        .limit(params.limit)
     ).all()
 
     rows = []
     for row in result:
-        # If only one column is selected the row type is string
-        if type(row) is str:
-            rows.append({params.columns[0]: row})
-        else:
+        if type(row) is Row:
             rows.append(dict(zip(params.columns, row)))
+        else:
+            # If only one column is selected the row does not contain column information
+            rows.append({params.columns[0]: row})
 
     return rows
 
