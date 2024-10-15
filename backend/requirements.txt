@@ -10,3 +10,6 @@ beautifulsoup4~=4.12.3
 SQLAlchemy~=2.0.35
 pydantic~=2.9.2
 ujson
+langchain~=0.3.3
+langgraph~=0.2.38
+typing_extensions~=4.12.2
