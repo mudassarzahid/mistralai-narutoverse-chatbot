@@ -13,7 +13,7 @@ from typing_extensions import Annotated, TypedDict
 from app.rag import RAG
 from consts import MISTRAL_LANGUAGE_MODEL
 
-llm = ChatMistralAI(model=MISTRAL_LANGUAGE_MODEL, temperature=0)
+llm = ChatMistralAI(model=MISTRAL_LANGUAGE_MODEL, temperature=0, streaming=True)
 
 retriever = RAG.retriever(1055)
 
