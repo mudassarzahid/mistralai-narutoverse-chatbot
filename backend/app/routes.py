@@ -1,8 +1,9 @@
+import json
 from http import HTTPStatus
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Request
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Body, Request, WebSocket
+from fastapi.responses import HTMLResponse, StreamingResponse
 from langchain_core.messages import HumanMessage, ToolMessage
 
 from app.llm_workflow import graph
@@ -41,10 +42,26 @@ def delete_character(character_id: int):
     return {"status": HTTPStatus.ACCEPTED}
 
 
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        message = json.loads(data)
+        user_message = message.get("message")
+
+        # Fictional character's response logic
+        character_response = {
+            "user": "FictionalCharacter",
+            "message": f"I heard you say: {user_message}",
+        }
+
+        await websocket.send_text(json.dumps(character_response))
+
+
 def event_stream(query: str):
     initial_state = {"messages": [HumanMessage(content=query)]}
     print(initial_state)
-    return
     for chunk in graph.stream(initial_state):
         for node_name, node_results in chunk.items():
             chunk_messages = node_results.get("messages", [])
