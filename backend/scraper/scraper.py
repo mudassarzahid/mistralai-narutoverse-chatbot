@@ -51,7 +51,7 @@ class NarutoWikiScraper:
     async def fetch_all_characters(self) -> list[Character]:
         """Main function to fetch all characters from the Naruto wiki."""
         all_characters = []
-        seen_character_urls = set()
+        seen_character_urls: set[str] = set()
         letters = list(string.ascii_uppercase) + ["%C2%A1"]
 
         async with httpx.AsyncClient() as client:
@@ -99,8 +99,7 @@ class NarutoWikiScraper:
                 image_url = re.sub(
                     r"(?i)\.(png|jpg|jpeg).*", r".\1", td.find("img")["src"]
                 )
-
-            curr_text = []
+            curr_text: list[str] = []
             tag_1, tag_2, tag_3 = "Summary", None, None
 
             for element in parsed_content:

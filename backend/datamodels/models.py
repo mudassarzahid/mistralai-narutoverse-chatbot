@@ -22,7 +22,7 @@ class GetCharactersQueryParams(QueryParams):
 
     @classmethod
     def from_request(cls, request: Request) -> "GetCharactersQueryParams":
-        params = dict(request.query_params)
+        params: dict[str, Any] = dict(request.query_params)
 
         # select columns
         columns = request.query_params.getlist("columns")
@@ -66,12 +66,13 @@ class Character(SQLModel, table=True):
     href: str = Field(default=None, index=True)
     image_url: Optional[str] = Field(default=None)
     summary: str = Field(default=None)
-    data: list[CharacterData] = Field(
-        default_factory=list[dict[str, Any]], sa_column=Column(JSON)
+    data: list[dict[str, Any]] = Field(
+        default_factory=list[CharacterData],
+        sa_column=Column(JSON),  # TODO: Is the typing correct?
     )
 
 
 class Story(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
-    href: str | None = Field(default=None, index=True)
+    href: str = Field(default=None, index=True)

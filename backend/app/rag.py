@@ -5,7 +5,7 @@ from langchain_mistralai import MistralAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from pydantic import TypeAdapter
 
-from consts import MISTRAL_API_KEY, VECTOR_DB_DIR
+from consts import MISTRAL_API_KEY, MISTRAL_EMBED_MODEL, VECTOR_DB_DIR
 from database.database import Database
 from datamodels.models import Character, CharacterData
 
@@ -70,7 +70,7 @@ class RAG:
             split_documents,
             persist_directory=VECTOR_DB_DIR,
             embedding=MistralAIEmbeddings(
-                model="mistral-embed", api_key=MISTRAL_API_KEY
+                model=MISTRAL_EMBED_MODEL, api_key=MISTRAL_API_KEY
             ),
         )
 
@@ -79,7 +79,7 @@ class RAG:
         # TODO: pydantic model for search_kwargs
         vectordb = Chroma(
             persist_directory=VECTOR_DB_DIR,
-            embedding_function=MistralAIEmbeddings(model="mistral-embed"),
+            embedding_function=MistralAIEmbeddings(model=MISTRAL_EMBED_MODEL),
         )
         return vectordb.as_retriever(
             search_kwargs={"k": 3, "filter": {"character_id": character_id}}
