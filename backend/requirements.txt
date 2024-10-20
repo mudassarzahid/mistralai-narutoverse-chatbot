@@ -13,3 +13,4 @@ ujson
 langchain~=0.3.3
 langgraph~=0.2.38
 typing_extensions~=4.12.2
+starlette~=0.39.2

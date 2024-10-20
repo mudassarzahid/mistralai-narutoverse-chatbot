@@ -1,14 +1,15 @@
 import json
 from http import HTTPStatus
-from typing import Annotated, Any
+from typing import Any, AsyncGenerator
 
 from fastapi import APIRouter, Body, Request, WebSocket
-from fastapi.responses import HTMLResponse, StreamingResponse
-from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.messages import AIMessageChunk, HumanMessage, ToolMessage
+from starlette.responses import StreamingResponse
 
-from app.llm_workflow import graph
+from app.llm_workflow import LlmWorkflow
 from database.database import Database
 from datamodels.models import Character, GetCharactersQueryParams
+from scraper.scraper import NarutoWikiScraper
 
 router = APIRouter()
 db = Database()
@@ -16,8 +17,8 @@ db = Database()
 
 @router.on_event("startup")
 async def on_startup():
-    db.create_db_and_tables()
-    await db.scrape_all_characters()
+    scraper = NarutoWikiScraper()
+    await scraper.scrape_all_characters()
 
 
 @router.post("/characters/")
@@ -59,25 +60,49 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_text(json.dumps(character_response))
 
 
-def event_stream(query: str):
-    initial_state = {"messages": [HumanMessage(content=query)]}
-    print(initial_state)
-    for chunk in graph.stream(initial_state):
-        for node_name, node_results in chunk.items():
-            chunk_messages = node_results.get("messages", [])
-            for message in chunk_messages:
-                # You can have any logic you like here
-                # The important part is the yield
-                if not message.content:
-                    continue
-                if isinstance(message, ToolMessage):
-                    event_str = "event: tool_event"
-                else:
-                    event_str = "event: ai_event"
-                data_str = f"data: {message.content}"
-                yield f"{event_str}\n{data_str}\n\n"
+agents_store = {}
+
+
+def get_agent(character_id: int, thread_id: str) -> LlmWorkflow:
+    """Retrieve or create a conversational agent based on the thread_id."""
+    if thread_id not in agents_store:
+        print("creating agent")
+        # Create a new agent if one doesn't exist for this thread
+        agents_store[thread_id] = LlmWorkflow(character_id)
+    return agents_store[thread_id]
+
+
+async def event_stream(query: str, character_id: int, thread_id: str) -> AsyncGenerator[str, None]:
+    """Function to stream LLM responses token by token."""
+    agent = get_agent(character_id, thread_id)
+    first, gathered = True, None
+    last_msg_id, should_yield = None, False
+    chat_history = agent.graph.get_state({"configurable": {"thread_id": thread_id}}).values.get("chat_history")
+    print(thread_id, chat_history)
+    # Stream the conversation response from the LLM
+    async for msg, metadata in agent.graph.astream(
+            {"input": query}, stream_mode="messages", config={"configurable": {"thread_id": thread_id}}
+    ):
+        if chat_history:
+            if last_msg_id and last_msg_id != msg.id:
+                should_yield = True
+            last_msg_id = msg.id
+        else:
+            should_yield = True
+
+        if isinstance(msg, AIMessageChunk):
+            if first:
+                gathered = msg
+                first = False
+            else:
+                gathered = gathered + msg
+
+            if msg.content and should_yield:
+                yield msg.content
 
 
 @router.post("/stream")
-async def stream(query: Annotated[str, Body(embed=True)]):
-    return StreamingResponse(event_stream(query), media_type="text/event-stream")
+async def stream(query: str = Body(), character_id: int = Body(), thread_id: str = Body()) -> StreamingResponse:
+    return StreamingResponse(
+        event_stream(query, character_id, thread_id), media_type="text/event-stream"
+    )

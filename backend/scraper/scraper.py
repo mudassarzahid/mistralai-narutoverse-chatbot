@@ -2,15 +2,19 @@ import re
 import string
 from typing import Any
 
+import bs4
 import httpx
 from bs4 import BeautifulSoup, SoupStrainer
+from sqlalchemy import select
 from tqdm import tqdm
 
+from database.database import Database
 from datamodels.models import Character, CharacterData
 
 
 class NarutoWikiScraper:
     def __init__(self):
+        self.db = Database()
         self.wiki_url = "https://naruto.fandom.com"
 
     @staticmethod
@@ -70,11 +74,13 @@ class NarutoWikiScraper:
             "html.parser",
             parse_only=SoupStrainer("a", class_="category-page__member-link"),
         )
-        return [
-            (f'{self.wiki_url}{a["href"]}', a["title"])
-            for a in soup
-            if "href" in a.attrs
-        ]
+        hrefs = []
+        tag: bs4.Tag
+        for tag in soup:
+            if "href" in tag.attrs:
+                hrefs.append((f'{self.wiki_url}{tag["href"]}', tag["title"]))
+
+        return hrefs
 
     @staticmethod
     def extract_character_data(character_page: str, name: str, url: str) -> Character:
@@ -84,7 +90,7 @@ class NarutoWikiScraper:
         )
         container = soup.find_all("div", {"class": "mw-parser-output"})
 
-        summary = None
+        summary, personality = [], []
         image_url = None
         character_data_list = []
 
@@ -99,17 +105,18 @@ class NarutoWikiScraper:
                 image_url = re.sub(
                     r"(?i)\.(png|jpg|jpeg).*", r".\1", td.find("img")["src"]
                 )
-            curr_text: list[str] = []
+            # First paragraph is always the summary
             tag_1, tag_2, tag_3 = "Summary", None, None
+            curr_text: list[str] = []
 
-            for element in parsed_content:
-                if (text := element.text.strip()) and not (
+            tag: bs4.Tag
+            for tag in parsed_content:
+                if (text := tag.text.strip()) and not (
                     text.startswith("See also: ") or text.startswith("Main article: ")
                 ):
-                    if element.name == "h2":
-                        if (
-                            curr_text and tag_1
-                        ):  # Save previous section before changing tags
+                    if tag.name == "h2":
+                        # Save previous section before changing tags
+                        if curr_text and tag_1:
                             character_data = CharacterData(
                                 text=" ".join(curr_text),
                                 tag_1=tag_1,
@@ -122,20 +129,23 @@ class NarutoWikiScraper:
                         tag_2 = None
                         tag_3 = None
                         curr_text = []
-                    elif element.name == "h3":
+                    elif tag.name == "h3":
                         tag_2 = text.replace("[]", "")
                         tag_3 = None
-                    elif element.name == "h4":
+                    elif tag.name == "h4":
                         tag_3 = text.replace("[]", "")
-                    elif element.name == "p":
+                    elif tag.name == "p":
                         clean = re.sub(r"\[\d+]", "", text)  # Remove reference marks
                         curr_text.append(clean)
-                        if not summary:
-                            summary = re.sub(
-                                r"\([^)]*\)", "", clean
-                            )  # First paragraph as summary
 
-            # After loop ends, add remaining text
+                        if tag_1 == "Summary":
+                            clean = re.sub(r"\([^)]*\)", "", clean)
+                            clean = re.sub(r"\s\s+", " ", clean)
+                            summary.append(clean)
+                        elif tag_1 == "Personality":
+                            personality.append(clean)
+
+            # Add remaining text after last iteration
             if curr_text:
                 character_data = CharacterData(
                     text=" ".join(curr_text),
@@ -145,13 +155,22 @@ class NarutoWikiScraper:
                 )
                 character_data_list.append(character_data)
 
-        # Create the Character instance with UUID
+        # Create the Character instance
         character = Character(
             name=name,
             href=url,
             image_url=image_url,
-            summary=summary,
+            summary=" ".join(summary),
+            personality=" ".join(personality),
             data=[data.model_dump() for data in character_data_list],
+            data_length=sum([len(data.text) for data in character_data_list]),
         )
 
         return character
+
+    async def scrape_all_characters(self) -> None:
+        character_count = self.db.session.exec(select(Character)).all()
+        if len(character_count) == 0:
+            characters = await self.fetch_all_characters()
+            self.db.session.bulk_save_objects(characters)
+            self.db.session.commit()

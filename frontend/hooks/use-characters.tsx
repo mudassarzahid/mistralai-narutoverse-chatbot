@@ -17,7 +17,7 @@ const useCharacters = () => {
     if (!fetched.current) {
       fetched.current = true;
       fetch(
-        "http://localhost:8080/characters?columns=id&columns=summary&columns=image_url&columns=name&order_by=relevance&limit=100",
+        "http://localhost:8080/characters?columns=id&columns=summary&columns=image_url&columns=name&order_by=data_length&asc=false&limit=100",
       )
         .then((response) => response.json())
         .then((data) => setCharacters(data))
