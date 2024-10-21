@@ -5,7 +5,7 @@ import { Head } from "./head";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/layouts/footer";
 
-export default function DefaultLayout({
+export default function ChatLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ export default function DefaultLayout({
     <div className="relative flex flex-col h-screen">
       <Head />
       <Navbar />
-      <main className="container mx-auto max-w-7xl px-6 flex-grow pt-16">
+      <main className="container mx-auto max-w-8xl px-6 flex-grow pt-8">
         {children}
       </main>
       <Footer />

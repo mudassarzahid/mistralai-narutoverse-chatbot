@@ -10,7 +10,6 @@ export type Character = {
   href?: string;
   image_url?: string;
   summary?: string;
-  information?: Record<string, any>;
 };
 
 export type Message = {

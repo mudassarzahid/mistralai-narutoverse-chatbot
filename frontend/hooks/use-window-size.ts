@@ -4,6 +4,7 @@ interface WindowSize {
   width: number;
   height: number;
 }
+
 function useWindowSize() {
   const [windowSize, setWindowSize] = useState<WindowSize>({
     width: 1,

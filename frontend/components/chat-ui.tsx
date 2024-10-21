@@ -1,4 +1,3 @@
-"use client";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Button,
@@ -14,34 +13,32 @@ import {
 import { Character, Message } from "@/types";
 import { SendIcon } from "@/components/icons";
 import useWindowSize from "@/hooks/use-window-size";
+import useThreadId from "@/hooks/use-thread-id";
+import { fetchChatHistory } from "@/pages/api/fetch-chat-history";
+import { fetchStream } from "@/pages/api/fetch-stream";
+import { ChatUiSkeleton } from "@/components/skeletons/chat-ui";
 
 interface ChatUiProps {
   characterData: Character;
-  threadId: string;
 }
 
-export function ChatUi({ characterData, threadId }: ChatUiProps) {
+export function ChatUi({ characterData }: ChatUiProps) {
   const [message, setMessage] = useState<string>("");
   const [chat, setChat] = useState<Message[]>([]);
   const [isWriting, setIsWriting] = useState(false);
   const [loading, setLoading] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const windowSize = useWindowSize();
+  const threadId = useThreadId();
 
   useEffect(() => {
-    fetch(
-      `http://localhost:8080/chat/history?thread_id=${threadId}&character_id=${characterData.id}`,
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      },
-    ).then((res) =>
-      res.json().then((data) => {
+    if (threadId) {
+      fetchChatHistory(threadId, Number(characterData.id)).then((data) => {
         setChat(data);
         setLoading(false);
-      }),
-    );
-  }, []);
+      });
+    }
+  }, [threadId]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -66,20 +63,11 @@ export function ChatUi({ characterData, threadId }: ChatUiProps) {
     setChat((prevChat) => [...prevChat, characterPlaceholder]);
 
     try {
-      const response = await fetch("http://localhost:8080/chat/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: newMessage.text,
-          character_id: characterData.id,
-          thread_id: threadId,
-        }),
-      });
-
-      if (!response.body) {
-        throw new Error("No response body");
-      }
-
+      const response = await fetchStream(
+        threadId,
+        newMessage.text,
+        characterData.id,
+      );
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let characterMessage = "";
@@ -95,7 +83,6 @@ export function ChatUi({ characterData, threadId }: ChatUiProps) {
           const chunk = decoder.decode(value, { stream: true });
 
           characterMessage += chunk;
-
           setChat((prevChat) => {
             const updatedChat = [...prevChat];
 
@@ -113,10 +100,10 @@ export function ChatUi({ characterData, threadId }: ChatUiProps) {
   };
 
   return loading ? (
-    <>Loading</>
+    <ChatUiSkeleton />
   ) : (
     <div>
-      <Card radius={"none"}>
+      <Card radius={"md"}>
         <CardHeader className={"bg-default"}>
           <Avatar
             isBordered

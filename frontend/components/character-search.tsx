@@ -1,4 +1,3 @@
-"use client";
 import { Autocomplete, AutocompleteItem, Avatar } from "@nextui-org/react";
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -10,6 +9,7 @@ import useCharacters from "@/hooks/use-characters";
 function truncateString(text: string, maxLength: number = 150): string {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 }
+
 export default function CharacterSearch() {
   const router = useRouter();
   const characters = useCharacters();
