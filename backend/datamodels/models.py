@@ -16,7 +16,7 @@ class QueryParams(BaseModel):
     limit: Annotated[int, Query(le=100)] = 100
 
 
-class GetCharactersQueryParams(QueryParams):
+class GetCharactersParams(QueryParams):
     columns: Optional[list[InstrumentedAttribute | UnaryExpression]] = None
     order_by: Optional[list[InstrumentedAttribute | UnaryExpression]] = None
     asc: Optional[bool] = True
@@ -25,7 +25,7 @@ class GetCharactersQueryParams(QueryParams):
         arbitrary_types_allowed = True
 
     @classmethod
-    def from_request(cls, request: Request) -> "GetCharactersQueryParams":
+    def from_request(cls, request: Request) -> "GetCharactersParams":
         params: dict[str, Any] = dict(request.query_params)
         valid_columns = list(Character.model_fields.keys())
         select_columns = request.query_params.getlist("columns")
@@ -58,6 +58,11 @@ class GetCharactersQueryParams(QueryParams):
         return columns
 
 
+class GetChatHistoryParams(QueryParams):
+    thread_id: str
+    character_id: int
+
+
 class CharacterData(BaseModel):
     text: str
     tag_1: str
@@ -88,6 +93,15 @@ class Story(SQLModel, table=True):
 class EmbeddingMapping(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     character_id: int = Field(default=None, index=True, foreign_key="character.id")
+
+
+class DocumentMetadata(BaseModel):
+    character_id: int
+    source: Optional[str] = "NarutoWiki"
+    name: str
+    tag_1: str
+    tag_2: Optional[str] = "null"
+    tag_3: Optional[str] = "null"
 
 
 # Using TypedDict instead of pydantic for easier integration

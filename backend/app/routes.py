@@ -1,18 +1,20 @@
-import json
 from http import HTTPStatus
 from typing import Any, AsyncGenerator
 
-from fastapi import APIRouter, Body, Request, WebSocket
-from langchain_core.messages import AIMessageChunk, HumanMessage, ToolMessage
+from fastapi import APIRouter, Body, Request
+from langchain_core.messages import AIMessageChunk, HumanMessage
 from starlette.responses import StreamingResponse
 
-from app.llm_workflow import LlmWorkflow
 from database.database import Database
-from datamodels.models import Character, GetCharactersQueryParams
+from datamodels.enums import Sender
+from datamodels.models import Character, GetCharactersParams, GetChatHistoryParams
+from llm.llm_workflow import LlmWorkflow
 from scraper.scraper import NarutoWikiScraper
+from utils.logger import get_logger
 
 router = APIRouter()
 db = Database()
+logger = get_logger()
 
 
 @router.on_event("startup")
@@ -28,7 +30,7 @@ def create_character(character: Character) -> Character:
 
 @router.get("/characters")
 def get_characters(request: Request) -> list[dict[str, Any]]:
-    params = GetCharactersQueryParams.from_request(request)
+    params = GetCharactersParams.from_request(request)
     return db.get(params)
 
 
@@ -43,66 +45,55 @@ def delete_character(character_id: int):
     return {"status": HTTPStatus.ACCEPTED}
 
 
-@router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        message = json.loads(data)
-        user_message = message.get("message")
+@router.get("/chat/history")
+def get_chat_history(request: Request) -> list[dict[str, Any]]:
+    params = GetChatHistoryParams(**dict(request.query_params))
+    agent = LlmWorkflow.from_thread_id(params.thread_id, params.character_id)
+    chat_history = agent.get_state(params.thread_id).values.get("chat_history", [])
 
-        # Fictional character's response logic
-        character_response = {
-            "user": "FictionalCharacter",
-            "message": f"I heard you say: {user_message}",
+    return [
+        {
+            "sender": Sender.user if type(message) is HumanMessage else Sender.bot,
+            "text": message.content,
         }
-
-        await websocket.send_text(json.dumps(character_response))
-
-
-agents_store = {}
+        for message in chat_history
+    ]
 
 
-def get_agent(character_id: int, thread_id: str) -> LlmWorkflow:
-    """Retrieve or create a conversational agent based on the thread_id."""
-    if thread_id not in agents_store:
-        print("creating agent")
-        # Create a new agent if one doesn't exist for this thread
-        agents_store[thread_id] = LlmWorkflow(character_id)
-    return agents_store[thread_id]
+@router.post("/chat/stream")
+async def stream(
+    query: str = Body(),
+    character_id: int = Body(),
+    thread_id: str = Body(),
+) -> StreamingResponse:
+    async def event_stream() -> AsyncGenerator[str, None]:
+        """Function to stream LLM responses chunk by chunk."""
+        agent = LlmWorkflow.from_thread_id(thread_id, character_id)
+        first, gathered = True, None
+        last_msg_id, should_yield = None, False
+        chat_history = agent.get_state(thread_id).values.get("chat_history")
 
-
-async def event_stream(query: str, character_id: int, thread_id: str) -> AsyncGenerator[str, None]:
-    """Function to stream LLM responses token by token."""
-    agent = get_agent(character_id, thread_id)
-    first, gathered = True, None
-    last_msg_id, should_yield = None, False
-    chat_history = agent.graph.get_state({"configurable": {"thread_id": thread_id}}).values.get("chat_history")
-    print(thread_id, chat_history)
-    # Stream the conversation response from the LLM
-    async for msg, metadata in agent.graph.astream(
-            {"input": query}, stream_mode="messages", config={"configurable": {"thread_id": thread_id}}
-    ):
-        if chat_history:
-            if last_msg_id and last_msg_id != msg.id:
-                should_yield = True
-            last_msg_id = msg.id
-        else:
-            should_yield = True
-
-        if isinstance(msg, AIMessageChunk):
-            if first:
-                gathered = msg
-                first = False
+        async for msg, metadata in agent.graph.astream(
+            {"input": query},
+            stream_mode="messages",
+            config=agent.get_config(thread_id),
+        ):
+            # This filters out the summarization AIMessageChunk
+            if chat_history:
+                if last_msg_id and last_msg_id != msg.id:
+                    should_yield = True
+                last_msg_id = msg.id
             else:
-                gathered = gathered + msg
+                should_yield = True
 
-            if msg.content and should_yield:
-                yield msg.content
+            if isinstance(msg, AIMessageChunk):
+                if first:
+                    gathered = msg
+                    first = False
+                else:
+                    gathered = gathered + msg
 
+                if msg.content and should_yield:
+                    yield msg.content
 
-@router.post("/stream")
-async def stream(query: str = Body(), character_id: int = Body(), thread_id: str = Body()) -> StreamingResponse:
-    return StreamingResponse(
-        event_stream(query, character_id, thread_id), media_type="text/event-stream"
-    )
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
