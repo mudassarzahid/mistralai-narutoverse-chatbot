@@ -7,7 +7,12 @@ from starlette.responses import StreamingResponse
 
 from database.database import Database
 from datamodels.enums import Sender
-from datamodels.models import Character, GetCharactersParams, GetChatHistoryParams, GetChatsParams
+from datamodels.models import (
+    Character,
+    GetCharactersParams,
+    GetChatHistoryParams,
+    GetChatsParams,
+)
 from llm.llm_workflow import LlmWorkflow
 from scraper.scraper import NarutoWikiScraper
 from utils.logger import get_logger
@@ -46,26 +51,28 @@ def delete_character(character_id: int):
 
 
 @router.get("/chat/history")
-def get_chat_history(request: Request) -> list[dict[str, Any]]:
+def get_chat_history(request: Request) -> dict[str, list[dict[str, Any]]]:
     params = GetChatHistoryParams(**dict(request.query_params))
     agent = LlmWorkflow.from_thread_id(params.thread_id, params.character_id)
     chat_history = agent.get_state(params.thread_id).values.get("chat_history", [])
 
-    return [
-        {
-            "sender": Sender.user if type(message) is HumanMessage else Sender.bot,
-            "text": message.content,
-        }
-        for message in chat_history
-    ]
+    return {
+        "data": [
+            {
+                "sender": Sender.user if type(message) is HumanMessage else Sender.bot,
+                "text": message.content,
+            }
+            for message in chat_history
+        ]
+    }
 
 
 @router.get("/chats")
-def get_chats(request: Request) -> list[int]:
+def get_chats(request: Request) -> dict[str, list[int]]:
     params = GetChatsParams(**dict(request.query_params))
     character_ids = LlmWorkflow.get_character_ids_from_thread_id(params.thread_id)
 
-    return character_ids
+    return {"data": character_ids}
 
 
 @router.post("/chat/stream")
