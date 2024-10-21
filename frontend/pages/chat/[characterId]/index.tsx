@@ -2,9 +2,10 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 import DefaultLayout from "@/layouts/default";
-import { ChatUi } from "@/pages/chat/[characterId]/chat-ui";
+import { ChatUi } from "@/components/chat-ui";
 import { fetchCharacter } from "@/pages/api/fetch-character";
 import { Character } from "@/types";
+import ChatSidebar from "@/components/chat-sidebar";
 
 export default function GetCharacterPage() {
   const router = useRouter();
@@ -32,7 +33,10 @@ export default function GetCharacterPage() {
       <section className="flex flex-col items-center justify-center">
         <div className="inline-block text-center justify-center">
           {character && threadId && (
-            <ChatUi characterData={character} threadId={threadId} />
+            <div className={"flex max-h-min"}>
+              <ChatSidebar />
+              <ChatUi characterData={character} threadId={threadId} />
+            </div>
           )}
         </div>
       </section>

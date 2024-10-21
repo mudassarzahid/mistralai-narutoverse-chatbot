@@ -10,10 +10,10 @@ import {
   Avatar,
   Spacer,
 } from "@nextui-org/react";
+
 import { Character, Message } from "@/types";
 import { SendIcon } from "@/components/icons";
 import useWindowSize from "@/hooks/use-window-size";
-import "./styles.css";
 
 interface ChatUiProps {
   characterData: Character;
@@ -24,14 +24,11 @@ export function ChatUi({ characterData, threadId }: ChatUiProps) {
   const [message, setMessage] = useState<string>("");
   const [chat, setChat] = useState<Message[]>([]);
   const [isWriting, setIsWriting] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const windowSize = useWindowSize();
 
   useEffect(() => {
-    if (chat.length === 0) {
-      setLoading(true);
-    }
     fetch(
       `http://localhost:8080/chat/history?thread_id=${threadId}&character_id=${characterData.id}`,
       {
@@ -40,8 +37,8 @@ export function ChatUi({ characterData, threadId }: ChatUiProps) {
       },
     ).then((res) =>
       res.json().then((data) => {
-        console.log(data);
         setChat(data);
+        setLoading(false);
       }),
     );
   }, []);
@@ -53,7 +50,6 @@ export function ChatUi({ characterData, threadId }: ChatUiProps) {
   }, [chat]);
 
   const sendMessage = async () => {
-    console.log(chat);
     if (!message.trim()) return;
 
     setIsWriting(true);
@@ -116,9 +112,11 @@ export function ChatUi({ characterData, threadId }: ChatUiProps) {
     }
   };
 
-  return (
+  return loading ? (
+    <>Loading</>
+  ) : (
     <div>
-      <Card>
+      <Card radius={"none"}>
         <CardHeader className={"bg-default"}>
           <Avatar
             isBordered

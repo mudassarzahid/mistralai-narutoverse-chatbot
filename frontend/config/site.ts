@@ -15,6 +15,6 @@ export const siteConfig = {
   ],
   navMenuItems: [],
   links: {
-    github: "https://github.com/nextui-org/nextui",
+    github: "https://github.com/mudassarzahid/mistralai-narutoverse-chatbot",
   },
 };
