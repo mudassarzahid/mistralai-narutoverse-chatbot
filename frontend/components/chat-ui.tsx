@@ -14,9 +14,10 @@ import { Character, Message } from "@/types";
 import { SendIcon } from "@/components/icons";
 import useWindowSize from "@/hooks/use-window-size";
 import useThreadId from "@/hooks/use-thread-id";
-import { fetchChatHistory } from "@/pages/api/fetch-chat-history";
-import { fetchStream } from "@/pages/api/fetch-stream";
+import { fetchChatHistory } from "@/api/fetch-chat-history";
+import { fetchStream } from "@/api/fetch-stream";
 import { ChatUiSkeleton } from "@/components/skeletons/chat-ui";
+import { Sender } from "@/types/enums";
 
 interface ChatUiProps {
   characterData: Character;
@@ -33,10 +34,12 @@ export function ChatUi({ characterData }: ChatUiProps) {
 
   useEffect(() => {
     if (threadId) {
-      fetchChatHistory(threadId, Number(characterData.id)).then((data) => {
-        setChat(data);
-        setLoading(false);
-      });
+      fetchChatHistory(threadId, Number(characterData.id)).then(
+        (chatHistory) => {
+          setChat(chatHistory.data);
+          setLoading(false);
+        },
+      );
     }
   }, [threadId]);
 
@@ -50,13 +53,13 @@ export function ChatUi({ characterData }: ChatUiProps) {
     if (!message.trim()) return;
 
     setIsWriting(true);
-    const newMessage: Message = { sender: "user", text: message.trim() };
+    const newMessage: Message = { sender: Sender.USER, text: message.trim() };
 
     setChat((prevChat) => [...prevChat, newMessage]);
     setMessage("");
 
     const characterPlaceholder: Message = {
-      sender: "bot",
+      sender: Sender.BOT,
       text: "",
     };
 

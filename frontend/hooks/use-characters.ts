@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 import { Character } from "@/types";
-import { fetchCharacters } from "@/pages/api/fetch-characters";
+import { fetchCharacters } from "@/api/fetch-characters";
 
 const useCharacters = () => {
   const [characters, setCharacters] = useState<Character[] | null>(null);

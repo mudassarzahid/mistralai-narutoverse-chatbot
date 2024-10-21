@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Card,
   CardHeader,
@@ -12,23 +12,26 @@ import { getRandomWidthClass } from "@/components/skeletons/common";
 import useWindowSize from "@/hooks/use-window-size";
 
 export function ChatUiSkeleton() {
-  const windowSize = useWindowSize();
+  const { width, height } = useWindowSize();
+
+  const cardBodyStyle = useMemo(
+    () => ({
+      height: `${height * 0.6}px`,
+      width: `${width * 0.6}px`,
+      OverflowY: "scroll",
+    }),
+    [width, height],
+  );
 
   return (
     <div>
-      <Card radius={"md"}>
-        <CardHeader className={"bg-default"}>
+      <Card radius="md">
+        <CardHeader className="bg-default">
           <Skeleton className="flex rounded-full w-14 h-14" />
           <Spacer x={4} />
           <Skeleton className={`h-3 ${getRandomWidthClass()} rounded-lg`} />
         </CardHeader>
-        <CardBody
-          style={{
-            height: `${windowSize.height * 0.6}px`,
-            width: `${windowSize.width * 0.6}px`,
-            overflowY: "scroll",
-          }}
-        >
+        <CardBody style={cardBodyStyle}>
           <Spacer y={2} />
           <Skeleton className="w-2/5 rounded-2xl p-3 self-end">
             <div className="h-3 w-full rounded-lg bg-secondary-200" />

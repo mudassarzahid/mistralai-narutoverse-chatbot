@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Listbox, ListboxItem, Avatar } from "@nextui-org/react";
 
-import { fetchChatIds } from "@/pages/api/fetch-chat-ids";
+import { fetchChatIds } from "@/api/fetch-chat-ids";
 import useCharacters from "@/hooks/use-characters";
 import ChatSidebarSkeleton from "@/components/skeletons/chat-sidebar";
 
@@ -12,11 +12,10 @@ export default function ChatSidebar({ threadId, characterId }) {
 
   useEffect(() => {
     if (characters) {
-      fetchChatIds(threadId).then((data) => {
-        console.log(data, Number(characterId));
+      fetchChatIds(threadId).then((chatIds) => {
         setFilteredChats(
           characters.filter((character) =>
-            [...data, Number(characterId)].includes(character.id),
+            [...chatIds.data, Number(characterId)].includes(character.id),
           ),
         );
         setLoading(false);

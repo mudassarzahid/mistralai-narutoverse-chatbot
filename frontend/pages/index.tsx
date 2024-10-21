@@ -1,10 +1,10 @@
 import React from "react";
 
-import Header from "@/components/header";
-import CharacterSearch from "@/components/character-search";
+import { Header } from "@/components/header";
+import { CharacterSearch } from "@/components/character-search";
 import DefaultLayout from "@/layouts/default";
 
-export default function IndexPage() {
+export default function IndexPage(): React.JSX.Element {
   return (
     <DefaultLayout>
       <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">

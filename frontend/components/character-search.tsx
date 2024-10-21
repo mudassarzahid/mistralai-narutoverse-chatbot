@@ -1,20 +1,51 @@
+// components/character-search.tsx
 import { Autocomplete, AutocompleteItem, Avatar } from "@nextui-org/react";
-import React from "react";
+import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 import { SearchIcon } from "./icons";
 
 import useCharacters from "@/hooks/use-characters";
+import { Character } from "@/types";
 
 function truncateString(text: string, maxLength: number = 150): string {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 }
 
-export default function CharacterSearch() {
+export function CharacterSearch() {
   const router = useRouter();
   const characters = useCharacters();
 
-  if (!characters) return <div>Loading...</div>;
+  const characterItems = useMemo(
+    () =>
+      (characters || []).map((character: Character) => (
+        <AutocompleteItem
+          key={character.id.toString()}
+          textValue={character.name}
+          onClick={() => {
+            router.push(`/chat/${character.id}`);
+          }}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2 items-center">
+              <Avatar
+                alt={character.name}
+                className="flex-shrink-0"
+                size="sm"
+                src={character.image_url}
+              />
+              <div className="flex flex-col">
+                <span className="text-small">{character.name}</span>
+                <span className="text-tiny text-default-400">
+                  {truncateString(character.summary || "")}
+                </span>
+              </div>
+            </div>
+          </div>
+        </AutocompleteItem>
+      )),
+    [characters, router],
+  );
 
   return (
     <div className="min-w-96 text-center justify-center">
@@ -66,32 +97,7 @@ export default function CharacterSearch() {
         }
         variant="bordered"
       >
-        {(character) => (
-          <AutocompleteItem
-            key={character.id!}
-            textValue={character.name}
-            onClick={() => {
-              router.push(`/chat/${character.id}`);
-            }}
-          >
-            <div className="flex justify-between items-center">
-              <div className="flex gap-2 items-center">
-                <Avatar
-                  alt={character.name}
-                  className="flex-shrink-0"
-                  size="sm"
-                  src={character.image_url}
-                />
-                <div className="flex flex-col">
-                  <span className="text-small">{character.name}</span>
-                  <span className="text-tiny text-default-400">
-                    {truncateString(character.summary || "")}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </AutocompleteItem>
-        )}
+        {characterItems}
       </Autocomplete>
     </div>
   );

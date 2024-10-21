@@ -1,14 +1,14 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
-import { ChatUi } from "@/components/chat-ui";
-import { fetchCharacter } from "@/pages/api/fetch-character";
 import { Character } from "@/types";
+import { ChatUi } from "@/components/chat-ui";
 import ChatSidebar from "@/components/chat-sidebar";
 import ChatLayout from "@/layouts/chat";
 import useThreadId from "@/hooks/use-thread-id";
+import { fetchCharacter } from "@/api/fetch-character";
 
-export default function GetCharacterPage() {
+export default function ChatWithCharacterPage() {
   const router = useRouter();
   const { characterId } = router.query;
   const [character, setCharacter] = useState<Character>();
@@ -27,7 +27,7 @@ export default function GetCharacterPage() {
       <section className="flex flex-col items-center justify-center">
         <div className="inline-block text-center justify-center">
           {character && threadId && (
-            <div className={"flex max-h-min"}>
+            <div className="flex max-h-min">
               <ChatSidebar characterId={character.id} threadId={threadId} />
               <ChatUi characterData={character} />
             </div>

@@ -5,7 +5,7 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
 };
 
 export type Character = {
-  id?: string;
+  id?: Number;
   name?: string;
   href?: string;
   image_url?: string;
