@@ -134,3 +134,9 @@ class LlmWorkflow:
                 cls.agents_store[thread_id][character_id] = LlmWorkflow(character_id)
 
         return cls.agents_store[thread_id][character_id]
+
+    @classmethod
+    def get_character_ids_from_thread_id(cls, thread_id: str) -> list[int]:
+        if thread_id not in cls.agents_store:
+            return []
+        return list(set(cls.agents_store[thread_id].keys()))

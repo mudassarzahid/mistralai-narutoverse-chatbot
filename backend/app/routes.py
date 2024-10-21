@@ -7,7 +7,7 @@ from starlette.responses import StreamingResponse
 
 from database.database import Database
 from datamodels.enums import Sender
-from datamodels.models import Character, GetCharactersParams, GetChatHistoryParams
+from datamodels.models import Character, GetCharactersParams, GetChatHistoryParams, GetChatsParams
 from llm.llm_workflow import LlmWorkflow
 from scraper.scraper import NarutoWikiScraper
 from utils.logger import get_logger
@@ -60,11 +60,19 @@ def get_chat_history(request: Request) -> list[dict[str, Any]]:
     ]
 
 
+@router.get("/chats")
+def get_chats(request: Request) -> list[int]:
+    params = GetChatsParams(**dict(request.query_params))
+    character_ids = LlmWorkflow.get_character_ids_from_thread_id(params.thread_id)
+
+    return character_ids
+
+
 @router.post("/chat/stream")
 async def stream(
-    query: str = Body(),
-    character_id: int = Body(),
-    thread_id: str = Body(),
+        query: str = Body(),
+        character_id: int = Body(),
+        thread_id: str = Body(),
 ) -> StreamingResponse:
     async def event_stream() -> AsyncGenerator[str, None]:
         """Function to stream LLM responses chunk by chunk."""
@@ -74,9 +82,9 @@ async def stream(
         chat_history = agent.get_state(thread_id).values.get("chat_history")
 
         async for msg, metadata in agent.graph.astream(
-            {"input": query},
-            stream_mode="messages",
-            config=agent.get_config(thread_id),
+                {"input": query},
+                stream_mode="messages",
+                config=agent.get_config(thread_id),
         ):
             # This filters out the summarization AIMessageChunk
             if chat_history:
