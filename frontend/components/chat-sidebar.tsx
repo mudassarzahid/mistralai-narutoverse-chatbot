@@ -5,7 +5,15 @@ import { fetchChatIds } from "@/api/fetch-chat-ids";
 import useCharacters from "@/hooks/use-characters";
 import ChatSidebarSkeleton from "@/components/skeletons/chat-sidebar";
 
-export default function ChatSidebar({ threadId, characterId }) {
+interface ChatSidebarProps {
+  threadId: string;
+  characterId: string;
+}
+
+export default function ChatSidebar({
+  threadId,
+  characterId,
+}: ChatSidebarProps) {
   const [filteredChats, setFilteredChats] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const characters = useCharacters();
@@ -23,9 +31,9 @@ export default function ChatSidebar({ threadId, characterId }) {
     }
   }, [characters]);
 
-  return loading ? (
-    <ChatSidebarSkeleton />
-  ) : (
+  if (loading) return <ChatSidebarSkeleton />;
+
+  return (
     <div className="w-full max-w-[260px] max-h-[100%] border-small px-2 mx-2 border-content1 bg-content1 rounded-xl">
       <Listbox
         classNames={{

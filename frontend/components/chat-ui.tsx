@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Button,
   Input,
@@ -41,7 +41,7 @@ export function ChatUi({ characterData }: ChatUiProps) {
         },
       );
     }
-  }, [threadId]);
+  }, [threadId, characterData.id]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -49,7 +49,7 @@ export function ChatUi({ characterData }: ChatUiProps) {
     }
   }, [chat]);
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if (!message.trim()) return;
 
     setIsWriting(true);
@@ -58,10 +58,7 @@ export function ChatUi({ characterData }: ChatUiProps) {
     setChat((prevChat) => [...prevChat, newMessage]);
     setMessage("");
 
-    const characterPlaceholder: Message = {
-      sender: Sender.BOT,
-      text: "",
-    };
+    const characterPlaceholder: Message = { sender: Sender.BOT, text: "" };
 
     setChat((prevChat) => [...prevChat, characterPlaceholder]);
 
@@ -82,7 +79,6 @@ export function ChatUi({ characterData }: ChatUiProps) {
         done = readerDone;
 
         if (value) {
-          // Update messages with each incoming chunk
           const chunk = decoder.decode(value, { stream: true });
 
           characterMessage += chunk;
@@ -100,21 +96,21 @@ export function ChatUi({ characterData }: ChatUiProps) {
     } finally {
       setIsWriting(false);
     }
-  };
+  }, [message, threadId, characterData.id]);
 
-  return loading ? (
-    <ChatUiSkeleton />
-  ) : (
+  if (loading) return <ChatUiSkeleton />;
+
+  return (
     <div>
-      <Card radius={"md"}>
-        <CardHeader className={"bg-default"}>
+      <Card radius="md">
+        <CardHeader className="bg-default">
           <Avatar
             isBordered
             className="w-14 h-14 text-large"
             src={characterData.image_url}
           />
           <Spacer x={4} />
-          <div className={"text-start"}>
+          <div className="text-start">
             <div className="font-bold">{characterData.name}</div>
             <div>
               {isWriting ? (
@@ -156,7 +152,7 @@ export function ChatUi({ characterData }: ChatUiProps) {
             }
           />
           <Spacer x={2} />
-          <Button isIconOnly aria-label="Like" onClick={sendMessage}>
+          <Button isIconOnly aria-label="Send" onClick={sendMessage}>
             <SendIcon />
           </Button>
         </CardFooter>
