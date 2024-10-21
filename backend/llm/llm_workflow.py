@@ -34,17 +34,29 @@ class LlmWorkflow:
 
         self.graph = self._build_graph()
 
-    def _get_summarized_personality(self, character_name: str, personality: str):
-        res = self.llm.invoke(Prompts.get_summarize_personality(character_name, personality))
-        print(res)
-        return res.content
+    def _get_summarized_personality(self) -> str:
+        if self.character.summarized_personality:
+            return self.character.summarized_personality
+
+        summarized_personality = self.llm.invoke(
+            Prompts.get_summarize_personality_prompt(
+                self.character.name,
+                self.character.personality,
+            )
+        ).content
+        self.db.update(
+            self.character,
+            {Character.summarized_personality.name: summarized_personality},
+        )
+
+        return summarized_personality
 
     def _build_graph(self):
         """Build the conversational state graph and the retriever model pipeline."""
         # System and history-aware prompts
         system_prompt = Prompts.get_system_prompt(
             self.character.name,
-            self._get_summarized_personality(self.character.name, self.character.personality)
+            self._get_summarized_personality(),
         )
 
         contextualize_q_prompt = ChatPromptTemplate.from_messages(

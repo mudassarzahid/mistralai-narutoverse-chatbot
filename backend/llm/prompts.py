@@ -34,7 +34,7 @@ class Prompts:
         )
 
     @staticmethod
-    def get_summarize_personality(character_name: str, personality: str):
+    def get_summarize_personality_prompt(character_name: str, personality: str):
         return (
             f"Summarize the personality description of {character_name} "
             f"from 'Naruto' below. Make sure to include all distinctive "

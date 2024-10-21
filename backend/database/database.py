@@ -39,7 +39,10 @@ class Database:
         ]
 
     def get_by_id(
-        self, entity_id: int, model: Type[IsAnSQLModel], id_key="id"
+        self,
+        entity_id: int,
+        model: Type[IsAnSQLModel],
+        id_key="id",
     ) -> IsAnSQLModel:
         entity = self.session.exec(
             select(model).where(getattr(model, id_key) == entity_id)
@@ -51,9 +54,22 @@ class Database:
         return entity
 
     def create(self, model: IsAnSQLModel) -> IsAnSQLModel:
-        self.session.add(model)
-        self.session.commit()
-        self.session.refresh(model)
+        with self.session as session:
+            session.add(model)
+            session.commit()
+            session.refresh(model)
+
+        return model
+
+    def update(
+        self, model: IsAnSQLModel, updated_fields: dict[str, Any]
+    ) -> IsAnSQLModel:
+        with self.session as session:
+            for key, value in updated_fields.items():
+                setattr(model, key, value)
+            session.add(model)
+            session.commit()
+            session.refresh(model)
         return model
 
     def delete_by_id(

@@ -77,6 +77,7 @@ class Character(SQLModel, table=True):
     image_url: Optional[str] = Field(default=None)
     summary: str = Field(default=None)
     personality: str = Field(default=None)
+    summarized_personality: Optional[str] = Field(default=None)
     data: list[dict[str, Any]] = Field(
         default_factory=list[CharacterData],
         sa_column=Column(JSON),

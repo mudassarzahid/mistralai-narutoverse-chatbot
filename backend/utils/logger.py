@@ -2,6 +2,8 @@ import logging
 import logging.handlers
 import os
 
+from utils.consts import LOGS_DIR
+
 
 def get_logger(
     name: str = "default",
@@ -19,14 +21,13 @@ def get_logger(
     """
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    log_dir_name = "logs"
 
     # Ensure log file directory exists
-    os.makedirs(log_dir_name, exist_ok=True)
+    os.makedirs(LOGS_DIR, exist_ok=True)
 
     # Create file handler that logs to a file
     file_handler = logging.handlers.RotatingFileHandler(
-        os.path.join(log_dir_name, f"{name}.log"),
+        os.path.join(LOGS_DIR, f"{name}.log"),
         maxBytes=1024 * 1024 * 5,
         backupCount=3,
     )
