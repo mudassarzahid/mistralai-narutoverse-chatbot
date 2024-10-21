@@ -71,7 +71,7 @@ export default function CharacterSearch() {
             key={character.id!}
             textValue={character.name}
             onClick={() => {
-              router.push(`/chat?characterId=${character.id}`);
+              router.push(`/chat/${character.id}`);
             }}
           >
             <div className="flex justify-between items-center">

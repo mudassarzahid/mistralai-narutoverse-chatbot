@@ -1,7 +1,4 @@
 "use client";
-import "./styles.css";
-
-import { useSearchParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Button,
@@ -13,39 +10,40 @@ import {
   Avatar,
   Spacer,
 } from "@nextui-org/react";
-
-import useCharacters from "@/hooks/use-characters";
+import { Character, Message } from "@/types";
 import { SendIcon } from "@/components/icons";
 import useWindowSize from "@/hooks/use-window-size";
+import "./styles.css";
 
-interface Message {
-  sender: string;
-  text: string;
+interface ChatUiProps {
+  characterData: Character;
+  threadId: string;
 }
 
-function generateThreadId() {
-  const id = crypto.randomUUID();
-
-  localStorage.setItem("thread_id", id);
-
-  return id;
-}
-export default function ChatPage() {
+export function ChatUi({ characterData, threadId }: ChatUiProps) {
   const [message, setMessage] = useState<string>("");
   const [chat, setChat] = useState<Message[]>([]);
+  const [isWriting, setIsWriting] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [threadId, setThreadId] = useState<string | null>(null);
-
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const searchParams = useSearchParams();
-  const characterId = Number.parseInt(searchParams.get("characterId") || "");
-  const characters = useCharacters();
   const windowSize = useWindowSize();
 
   useEffect(() => {
-    const threadId = localStorage.getItem("thread_id") || generateThreadId();
-
-    setThreadId(threadId);
+    if (chat.length === 0) {
+      setLoading(true);
+    }
+    fetch(
+      `http://localhost:8080/chat/history?thread_id=${threadId}&character_id=${characterData.id}`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      },
+    ).then((res) =>
+      res.json().then((data) => {
+        console.log(data);
+        setChat(data);
+      }),
+    );
   }, []);
 
   useEffect(() => {
@@ -54,56 +52,58 @@ export default function ChatPage() {
     }
   }, [chat]);
 
-  if (!characters) return <div className="loading">Loading</div>;
-  const characterData = characters.filter(
-    (character) => character.id === characterId,
-  )[0];
-
   const sendMessage = async () => {
+    console.log(chat);
     if (!message.trim()) return;
-    setLoading(true);
 
+    setIsWriting(true);
     const newMessage: Message = { sender: "user", text: message.trim() };
 
     setChat((prevChat) => [...prevChat, newMessage]);
-    setMessage(""); // Clear input
+    setMessage("");
+
+    const characterPlaceholder: Message = {
+      sender: "bot",
+      text: "",
+    };
+
+    setChat((prevChat) => [...prevChat, characterPlaceholder]);
 
     try {
-      const response = await fetch("http://localhost:8080/stream", {
+      const response = await fetch("http://localhost:8080/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: newMessage.text,
-          character_id: characterId,
+          character_id: characterData.id,
           thread_id: threadId,
         }),
       });
 
-      if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        let done = false;
-        let botMessage = "";
+      if (!response.body) {
+        throw new Error("No response body");
+      }
 
-        // Add a new placeholder message for the character's response
-        const botPlaceholder: Message = {
-          sender: characterData.name,
-          text: "",
-        };
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let characterMessage = "";
+      let done = false;
 
-        setChat((prevChat) => [...prevChat, botPlaceholder]);
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
 
-        while (!done) {
-          const { value, done: readerDone } = await reader.read();
+        done = readerDone;
 
-          done = readerDone;
-          const chunkValue = decoder.decode(value, { stream: !done });
+        if (value) {
+          // Update messages with each incoming chunk
+          const chunk = decoder.decode(value, { stream: true });
 
-          botMessage += chunkValue;
+          characterMessage += chunk;
+
           setChat((prevChat) => {
             const updatedChat = [...prevChat];
 
-            updatedChat[updatedChat.length - 1].text = botMessage;
+            updatedChat[updatedChat.length - 1].text = characterMessage;
 
             return updatedChat;
           });
@@ -111,15 +111,17 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error("Error streaming message:", error);
+    } finally {
+      setIsWriting(false);
     }
-    setLoading(false);
   };
 
   return (
     <div>
       <Card>
-        <CardHeader style={{ backgroundColor: "dimgrey" }}>
+        <CardHeader className={"bg-default"}>
           <Avatar
+            isBordered
             className="w-14 h-14 text-large"
             src={characterData.image_url}
           />
@@ -127,7 +129,7 @@ export default function ChatPage() {
           <div className={"text-start"}>
             <div className="font-bold">{characterData.name}</div>
             <div>
-              {loading ? (
+              {isWriting ? (
                 <span className="loading">Writing</span>
               ) : (
                 <span>&nbsp;</span>
@@ -145,15 +147,11 @@ export default function ChatPage() {
           {chat.map((msg, index) => (
             <div
               key={index}
-              style={{
-                backgroundColor:
-                  msg.sender === characterData.name ? "dimgrey" : "darkorange",
-                maxWidth: "80%",
-                alignSelf: msg.sender === characterData.name ? "start" : "end",
-                padding: "8px 24px 8px 24px",
-                marginBottom: "8px",
-                borderRadius: "24px",
-              }}
+              className={`${
+                msg.sender === "bot"
+                  ? "bg-default-200 self-start"
+                  : "bg-primary-300 self-end"
+              } max-w-full rounded-3xl mb-3 px-4 py-3`}
             >
               <p>{msg.text}</p>
             </div>

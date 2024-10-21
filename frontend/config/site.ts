@@ -1,18 +1,20 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "Next.js + NextUI",
-  description: "Make beautiful websites regardless of your design experience.",
+  name: "NarutoVerse Chatbot",
+  description: "Chat with your favorite NarutoVerse Characters",
   navItems: [
     {
       label: "Home",
       href: "/",
     },
     {
-      label: "Settings",
-      href: "/settings",
+      label: "Chat",
+      href: "/chat",
     },
   ],
   navMenuItems: [],
-  links: {},
+  links: {
+    github: "https://github.com/nextui-org/nextui",
+  },
 };

@@ -12,3 +12,8 @@ export type Character = {
   summary?: string;
   information?: Record<string, any>;
 };
+
+export type Message = {
+  sender: string;
+  text: string;
+};

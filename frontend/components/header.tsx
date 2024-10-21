@@ -8,7 +8,9 @@ export default function Header() {
         favorite NarutoVerse&nbsp;
       </span>
       <span className={title()}>characters!</span>
-      <div className={subtitle({ class: "mt-4" })}>Some subtitle</div>
+      <div className={subtitle({ class: "mt-4" })}>
+        MistralAI-powered Chatbots
+      </div>
     </div>
   );
 }
