@@ -4,8 +4,34 @@
 
 ### Built With
 
-The backend is written in Python **3.10.8** and uses `FastAPI` along with `Uvicorn`.
+The backend is written in Python 3.10.8 and uses `FastAPI` along with `Uvicorn`.
 The frontend is written in TypeScript using `Next.js` (`React`).
+
+### How does it work?
+
+1. **Initialize database**
+   On backend startup, a local SQLite db is created and all characters from NarutoWiki are scraped
+   and saved. If the database already exists, this step is skipped.
+   **Important note**: I got explicit permission from Fandom.com to scrape these sites. To avoid
+   overloading NarutoWiki with too many requests and for convenience, I have pushed a pre-built
+   SQLite database with 50 characters to this repository.
+2. **Embeddings**
+   When a character is selected, their wiki data is split into segments, embeddings are created,
+   and stored in the Chroma vectorDB for RAG. If embeddings for that character already exist,
+   this step is skipped.
+3. **Conversational AI**
+   Using a LangChain graph, the user can then chat with the character. The graph workflow
+   consists of the following steps:
+    - Taking user input
+    - Rephrasing the input by prompting LLM to generate a query optimized for RAG
+    - Querying the vectorDB which returns the 2 most relevant documents
+    - Generating a response to the user by combining:
+        - The retrieved documents
+        - An instruction prompt including the character's personality
+        - A summary of the overall chat history
+
+The character (bot) responds and the LLM-generated tokens are streamed chunk
+by chunk to the frontend for a smooth ChatGPT-like experience.
 
 ### Run locally
 
@@ -57,32 +83,6 @@ yarn install
 ```shell
 yarn dev
 ```
-
-### How does it work?
-
-1. **Initialize database**
-   On backend startup, a local SQLite db is created and all characters from NarutoWiki are scraped
-   and saved. If the database already exists, this step is skipped.
-   **Important note**: I got explicit permission from Fandom.com to scrape these sites. To avoid
-   overloading NarutoWiki with too many requests and for convenience, I have pushed a pre-built
-   SQLite database with 50 characters to this repository.
-2. **Embeddings**
-   When a character is selected, their wiki data is split into segments, embeddings are created,
-   and stored in the Chroma vectorDB for RAG. If embeddings for that character already exist,
-   this step is skipped.
-3. **Conversational AI**
-   Using a LangChain graph, the user can then chat with the character. The graph workflow
-   consists of the following steps:
-    - Taking user input
-    - Rephrasing the input by prompting LLM to generate a query optimized for RAG
-    - Querying the vectorDB which returns the 2 most relevant documents
-    - Generating a response to the user by combining:
-        - The retrieved documents
-        - An instruction prompt including the character's personality
-        - A summary of the overall chat history
-
-The character (bot) responds and the LLM-generated tokens are streamed chunk
-by chunk to the frontend for a smooth ChatGPT-like experience.
 
 ### Known problems and TODOs
 
