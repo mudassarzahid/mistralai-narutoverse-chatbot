@@ -49,9 +49,10 @@ class Prompts:
                 relevant to the conversation.
         """
         return (
-            "Given the above conversation, generate a search query to "
+            "Given the above conversation, generate ONLY a search query to "
             "look up in order to get information relevant to the conversation. "
-            f"IMPORTANT: 'You' always refers to the character {character_name}!"
+            f"IMPORTANT: When HUMAN says 'You' it always refers to the character "
+            f"{character_name}!\nQuery:"
         )
 
     @staticmethod
