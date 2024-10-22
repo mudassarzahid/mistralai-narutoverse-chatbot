@@ -77,9 +77,9 @@ def get_chats(request: Request) -> dict[str, list[int]]:
 
 @router.post("/chat/stream")
 async def stream(
-        query: str = Body(),
-        character_id: int = Body(),
-        thread_id: str = Body(),
+    query: str = Body(),
+    character_id: int = Body(),
+    thread_id: str = Body(),
 ) -> StreamingResponse:
     async def event_stream() -> AsyncGenerator[str, None]:
         """Function to stream LLM responses chunk by chunk."""
@@ -89,9 +89,9 @@ async def stream(
         chat_history = agent.get_state(thread_id).values.get("chat_history")
 
         async for msg, metadata in agent.graph.astream(
-                {"input": query},
-                stream_mode="messages",
-                config=agent.get_config(thread_id),
+            {"input": query},
+            stream_mode="messages",
+            config=agent.get_config(thread_id),
         ):
             # This filters out the summarization AIMessageChunk
             if chat_history:
