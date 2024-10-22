@@ -56,8 +56,10 @@ export default function ChatSidebar({
             key={character.id}
             hideSelectedIcon
             shouldHighlightOnFocus
+            className={
+              character.id === Number(characterId) ? "bg-content2" : ""
+            }
             href={`/chat/${character.id}`}
-            isDisabled={character.id === Number(characterId)}
             textValue={character.name}
           >
             <div className="flex gap-2 items-center">
