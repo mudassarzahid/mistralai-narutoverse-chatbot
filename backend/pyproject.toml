@@ -27,6 +27,7 @@ typing-extensions = ">=4.12.2,<4.13.0"
 starlette = ">=0.39.2,<0.40.0"
 ujson = "^5.10.0"
 langchain-chroma = "^0.1.4"
+uvicorn = "^0.32.0"
 
 [tool.poetry.group.dev.dependencies]
 types-requests = "^2.32.0.20241016"

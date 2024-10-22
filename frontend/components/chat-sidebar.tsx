@@ -7,7 +7,7 @@ import ChatSidebarSkeleton from "@/components/skeletons/chat-sidebar";
 
 interface ChatSidebarProps {
   threadId: string;
-  characterId: string;
+  characterId: Number;
 }
 
 export default function ChatSidebar({
