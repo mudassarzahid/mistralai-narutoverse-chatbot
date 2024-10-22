@@ -36,7 +36,7 @@ export function ChatUi({ characterData }: ChatUiProps) {
     if (threadId) {
       fetchChatHistory(threadId, Number(characterData.id)).then(
         (chatHistory) => {
-          setChat(chatHistory.data);
+          setChat(chatHistory);
           setLoading(false);
         },
       );

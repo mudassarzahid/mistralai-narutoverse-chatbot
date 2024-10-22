@@ -2,9 +2,7 @@ import { fetchData } from "./fetch-utils";
 
 import { Message } from "@/types";
 
-interface ChatHistory {
-  data: Message[];
-}
+type ChatHistory = Message[];
 
 export async function fetchChatHistory(
   threadId: string,

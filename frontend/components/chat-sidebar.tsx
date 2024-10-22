@@ -23,7 +23,7 @@ export default function ChatSidebar({
       fetchChatIds(threadId).then((chatIds) => {
         setFilteredChats(
           characters.filter((character) =>
-            [...chatIds.data, Number(characterId)].includes(character.id),
+            [...chatIds, Number(characterId)].includes(character.id),
           ),
         );
         setLoading(false);
