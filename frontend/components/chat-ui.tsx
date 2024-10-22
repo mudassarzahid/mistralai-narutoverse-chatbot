@@ -50,7 +50,7 @@ export function ChatUi({ characterData }: ChatUiProps) {
   }, [chat]);
 
   const sendMessage = useCallback(async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || isWriting) return;
 
     setIsWriting(true);
     const newMessage: Message = { sender: Sender.USER, text: message.trim() };
