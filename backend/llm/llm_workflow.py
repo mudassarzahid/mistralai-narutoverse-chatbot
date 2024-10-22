@@ -22,7 +22,7 @@ logger = get_logger()
 class LlmWorkflow:
     agents_store: dict[str, dict[int, "LlmWorkflow"]] = {}
 
-    def __init__(self, character_id: int):
+    def __init__(self, character_id: int, thread_id: str):
         """Initialize the ConversationalAgent with a specific character."""
         self.db = Database()
         self.character_id = character_id
@@ -32,7 +32,7 @@ class LlmWorkflow:
         self.rag = RAG()
         self.retriever = self.rag.retriever(character_id)
 
-        self.graph = self._build_graph()
+        self.graph = self._build_graph(thread_id)
 
     def _get_summarized_personality(self) -> str:
         if self.character.summarized_personality:
@@ -51,7 +51,7 @@ class LlmWorkflow:
 
         return summarized_personality
 
-    def _build_graph(self):
+    def _build_graph(self, thread_id: str):
         """Build the conversational state graph and the retriever model pipeline."""
         # System and history-aware prompts
         system_prompt = Prompts.get_system_prompt(
@@ -61,7 +61,10 @@ class LlmWorkflow:
 
         contextualize_q_prompt = ChatPromptTemplate.from_messages(
             [
-                ("system", Prompts.get_contextualize_q_system_prompt()),
+                (
+                    "system",
+                    Prompts.get_contextualize_q_system_prompt(self.character.name),
+                ),
                 MessagesPlaceholder("chat_history"),
                 ("human", "{input}"),
             ]
@@ -90,7 +93,7 @@ class LlmWorkflow:
         )
 
         # Define the model call as a node in the graph
-        async def call_model(state: State, config=None):
+        async def call_model(state: State, config: RunnableConfig = None):
             response = await rag_chain.ainvoke(state, config)
 
             return {
@@ -119,19 +122,21 @@ class LlmWorkflow:
 
     @staticmethod
     def get_config(thread_id: str) -> RunnableConfig:
-        return RunnableConfig(
-            **{"configurable": {"thread_id": thread_id}},
-        )
+        return {"configurable": {"thread_id": thread_id}}
 
     @classmethod
     def from_thread_id(cls, thread_id: str, character_id: int) -> "LlmWorkflow":
         """Retrieve or create a conversational agent based on the thread_id."""
         if thread_id not in cls.agents_store:
             logger.debug(f"Creating new agent for thread {thread_id}.")
-            cls.agents_store[thread_id] = {character_id: LlmWorkflow(character_id)}
+            cls.agents_store[thread_id] = {
+                character_id: LlmWorkflow(character_id, thread_id)
+            }
         else:
             if character_id not in cls.agents_store[thread_id]:
-                cls.agents_store[thread_id][character_id] = LlmWorkflow(character_id)
+                cls.agents_store[thread_id][character_id] = LlmWorkflow(
+                    character_id, thread_id
+                )
 
         return cls.agents_store[thread_id][character_id]
 
