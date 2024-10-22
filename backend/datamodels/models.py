@@ -46,7 +46,7 @@ class GetCharactersParams(QueryParams):
 
     @staticmethod
     def _get_validated_columns(
-            columns: list[str], valid_columns: list[str]
+        columns: list[str], valid_columns: list[str]
     ) -> list[str]:
         query_columns = columns or valid_columns
         query_columns_set = set(query_columns)
