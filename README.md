@@ -1,11 +1,11 @@
 ## MistralAI-based NarutoVerse Chatbot
 
-#### by Mudassar Zahid
+![Example Chat](./public/example.gif)
 
 ### Built With
 
 The backend is written in Python **3.10.8** and uses `FastAPI` along with `Uvicorn`.
-The frontend is built using Next.js (React) in TypeScript.
+The frontend is written in TypeScript using `Next.js` (`React`).
 
 ### Run locally
 
