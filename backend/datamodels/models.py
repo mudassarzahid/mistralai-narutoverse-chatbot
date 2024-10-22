@@ -4,11 +4,13 @@ from fastapi import Query, Request
 from fastapi.exceptions import RequestValidationError
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from sqlalchemy import JSON, Column, UnaryExpression
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlmodel import Field, SQLModel
 from typing_extensions import Annotated, TypedDict
+
+from datamodels.enums import Sender
 
 
 class QueryParams(BaseModel):
@@ -55,7 +57,7 @@ class GetCharactersParams(QueryParams):
             raise RequestValidationError(
                 f"{query_columns_set=} must be a subset of {valid_columns_set=}."
             )
-        return columns
+        return query_columns
 
 
 class GetChatHistoryParams(QueryParams):
@@ -74,10 +76,33 @@ class CharacterData(BaseModel):
     tag_3: Optional[str] = Field(default=None)
 
 
+class CharacterCreate(BaseModel):
+    name: str
+    href: str
+    image_url: Optional[str] = None
+    summary: str
+    personality: str
+    summarized_personality: Optional[str] = None
+    data: Optional[list[CharacterData]] = []
+    data_length: Optional[int] = 0
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_card_number_omitted(cls, data: dict[str, Any]) -> dict[str, Any]:
+        data.update(
+            {
+                "data_length": sum(
+                    [len(section["text"]) for section in data.get("data", [])]
+                )
+            }
+        )
+        return data
+
+
 class Character(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
-    href: str = Field(default=None, index=True)
+    href: str = Field(index=True)
     image_url: Optional[str] = Field(default=None)
     summary: str = Field(default=None)
     personality: str = Field(default=None)
@@ -107,6 +132,17 @@ class DocumentMetadata(BaseModel):
     tag_1: str
     tag_2: Optional[str] = "null"
     tag_3: Optional[str] = "null"
+
+
+class ApiResponse(BaseModel):
+    data: Any
+    message: Optional[str] = None
+    status: int
+
+
+class Message(BaseModel):
+    sender: Sender
+    text: str
 
 
 # Using TypedDict instead of pydantic for easier integration

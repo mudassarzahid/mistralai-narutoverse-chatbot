@@ -9,9 +9,11 @@ from database.database import Database
 from datamodels.enums import Sender
 from datamodels.models import (
     Character,
+    CharacterCreate,
     GetCharactersParams,
     GetChatHistoryParams,
     GetChatsParams,
+    Message,
 )
 from llm.llm_workflow import LlmWorkflow
 from scraper.scraper import NarutoWikiScraper
@@ -29,20 +31,22 @@ async def on_startup() -> None:
     await scraper.scrape_all_characters()
 
 
-@router.post("/characters/")
-def create_character(character: Character) -> Character:
+@router.post("/characters", status_code=HTTPStatus.CREATED)
+def create_character(character_create: CharacterCreate) -> Character:
     """Creates a new character in the database.
 
     Args:
-        character (Character): The character object to create.
+        character_create (CharacterCreate): The character object to create.
 
     Returns:
         Character: The created character object.
     """
-    return db.create(character)
+    return db.create(Character(**character_create.dict()))
 
 
-@router.get("/characters")
+@router.get(
+    "/characters", response_model=list[Character], response_model_exclude_defaults=True
+)
 def get_characters(request: Request) -> list[dict[str, Any]]:
     """Fetches a list of characters based on the provided parameters.
 
@@ -72,22 +76,22 @@ def read_character(character_id: int) -> Character:
     return db.get_by_id(character_id, Character)
 
 
-@router.delete("/characters/{character_id}")
-def delete_character(character_id: int):
+@router.delete("/characters/{character_id}", status_code=HTTPStatus.ACCEPTED)
+def delete_character(character_id: int) -> dict:
     """Deletes a character by their ID.
 
     Args:
         character_id (int): The ID of the character to delete.
 
     Returns:
-        dict: A response dictionary containing the status of the deletion.
+        dict: Empty dictionary.
     """
     db.delete_by_id(character_id, Character)
-    return {"status": HTTPStatus.ACCEPTED}
+    return {}
 
 
 @router.get("/chat/history")
-def get_chat_history(request: Request) -> dict[str, list[dict[str, Any]]]:
+def get_chat_history(request: Request) -> list[Message]:
     """Fetches the chat history for a specific thread and character.
 
     Args:
@@ -100,19 +104,17 @@ def get_chat_history(request: Request) -> dict[str, list[dict[str, Any]]]:
     agent = LlmWorkflow.from_thread_id(params.thread_id, params.character_id)
     chat_history = agent.get_state(params.thread_id).values.get("chat_history", [])
 
-    return {
-        "data": [
-            {
-                "sender": Sender.user if isinstance(message, HumanMessage) else Sender.bot,
-                "text": message.content,
-            }
-            for message in chat_history
-        ]
-    }
+    return [
+        Message(
+            sender=Sender.user if isinstance(message, HumanMessage) else Sender.bot,
+            text=message.content,
+        )
+        for message in chat_history
+    ]
 
 
 @router.get("/chats")
-def get_chats(request: Request) -> dict[str, list[int]]:
+def get_chats(request: Request) -> list[int]:
     """Retrieves character IDs associated with a specific thread.
 
     Args:
@@ -124,10 +126,10 @@ def get_chats(request: Request) -> dict[str, list[int]]:
     params = GetChatsParams(**dict(request.query_params))
     character_ids = LlmWorkflow.get_character_ids_from_thread_id(params.thread_id)
 
-    return {"data": character_ids}
+    return character_ids
 
 
-@router.post("/chat/stream")
+@router.post("/chat/stream", status_code=HTTPStatus.ACCEPTED)
 async def stream(
     query: str = Body(),
     character_id: int = Body(),
@@ -143,6 +145,7 @@ async def stream(
     Returns:
         StreamingResponse: An event stream that yields LLM responses as text chunks.
     """
+
     async def event_stream() -> AsyncGenerator[str, None]:
         """Internal function to stream LLM responses in real-time."""
         agent = LlmWorkflow.from_thread_id(thread_id, character_id)

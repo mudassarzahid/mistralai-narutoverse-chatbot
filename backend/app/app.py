@@ -12,7 +12,7 @@ from app.routes import router
 app = FastAPI()
 app.include_router(router)
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # type: ignore
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
