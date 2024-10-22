@@ -12,3 +12,4 @@ ROOT_DIR = Path(CURRENT_PATH).parent.parent.absolute()
 LOGS_DIR = str(ROOT_DIR.joinpath("logs"))
 VECTOR_DB_DIR = str(ROOT_DIR.joinpath("llm", "vectordb"))
 NARUTO_WIKI_DB_FILE = str(ROOT_DIR.joinpath("database", "database.sqlite3"))
+NARUTO_WIKI_BASE_URL = "https://naruto.fandom.com"

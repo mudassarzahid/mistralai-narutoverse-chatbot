@@ -16,8 +16,8 @@ class Prompts:
         return (
             "<!--- Instruction Start -->\n"
             "## Task\n"
-            "Adopt the personality described below and respond to the last USER "
-            "message in conversation history. The USER is a total stranger to "
+            "Adopt the personality described below and respond to the last HUMAN "
+            "message in conversation history. The HUMAN is a total stranger to "
             "you. Consider the complete conversation history, the character's "
             "current location, situation, emotional state and goals when writing "
             "a response. Consider the additional context ONLY if it is relevant "

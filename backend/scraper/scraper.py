@@ -1,6 +1,6 @@
 import re
 import string
-from typing import Any
+from typing import Any, List, Tuple
 
 import bs4
 import httpx
@@ -10,16 +10,31 @@ from tqdm import tqdm
 
 from database.database import Database
 from datamodels.models import Character, CharacterData
+from utils.consts import NARUTO_WIKI_BASE_URL
 
 
 class NarutoWikiScraper:
+    """A scraper for fetching character data from the NarutoWiki."""
+
     def __init__(self):
+        """Initializes the NarutoWikiScraper with a database connection and base URL."""
         self.db = Database()
-        self.wiki_url = "https://naruto.fandom.com"
 
     @staticmethod
     async def fetch_page(client: httpx.AsyncClient, url: str) -> str:
-        """Fetch page content for a given URL and return the text."""
+        """Fetch the HTML content of a given URL.
+
+        Args:
+            client (httpx.AsyncClient): The HTTP client used for making requests.
+            url (str): The URL of the page to fetch.
+
+        Returns:
+            str: The HTML content of the fetched page.
+
+        Raises:
+            httpx.HTTPStatusError: If the HTTP request returned
+                an unsuccessful status code.
+        """
         response = await client.get(url)
         response.raise_for_status()
         return response.text
@@ -27,7 +42,17 @@ class NarutoWikiScraper:
     async def fetch_character_details(
         self, client: httpx.AsyncClient, url: str, name: str
     ) -> Character:
-        """Fetch and parse character details from the individual character page."""
+        """Fetch and parse character details from an individual character page.
+
+        Args:
+            client (httpx.AsyncClient): The HTTP client used for making requests.
+            url (str): The URL of the character page.
+            name (str): The name of the character.
+
+        Returns:
+            Character: An instance of the Character model populated
+                with the scraped data.
+        """
         character_page = await self.fetch_page(client, url)
         character = self.extract_character_data(character_page, name, url)
         return character
@@ -37,9 +62,18 @@ class NarutoWikiScraper:
         client: httpx.AsyncClient,
         letter: str,
         seen_character_urls: set,
-    ) -> list[Character]:
-        """Fetch and parse all characters for a specific letter category."""
-        base_url = f"{self.wiki_url}/wiki/Category:Characters?from={letter}"
+    ) -> List[Character]:
+        """Fetch and parse all characters for a specific letter category.
+
+        Args:
+            client (httpx.AsyncClient): The HTTP client used for making requests.
+            letter (str): The letter representing the category of characters.
+            seen_character_urls (set): A set of URLs that have already been processed.
+
+        Returns:
+            List[Character]: A list of Character instances parsed from the category page.
+        """
+        base_url = f"{NARUTO_WIKI_BASE_URL}/wiki/Category:Characters?from={letter}"
         category_page = await self.fetch_page(client, base_url)
         character_hrefs = self.parse_character_list(category_page)
         characters = []
@@ -52,8 +86,12 @@ class NarutoWikiScraper:
 
         return characters
 
-    async def fetch_all_characters(self) -> list[Character]:
-        """Main function to fetch all characters from the Naruto wiki."""
+    async def fetch_all_characters(self) -> List[Character]:
+        """Main function to fetch all characters from the Naruto Wiki.
+
+        Returns:
+            List[Character]: A list of all characters fetched from the wiki.
+        """
         all_characters = []
         seen_character_urls: set[str] = set()
         letters = list(string.ascii_uppercase) + ["%C2%A1"]
@@ -67,8 +105,16 @@ class NarutoWikiScraper:
 
         return all_characters
 
-    def parse_character_list(self, page_content: str) -> list[tuple[str, Any]]:
-        """Extract character URLs from the category page."""
+    @staticmethod
+    def parse_character_list(page_content: str) -> List[Tuple[str, Any]]:
+        """Extract character URLs from the category page.
+
+        Args:
+            page_content (str): The HTML content of the category page.
+
+        Returns:
+            List[Tuple[str, Any]]: A list of tuples containing character URLs and names.
+        """
         soup = BeautifulSoup(
             page_content,
             "html.parser",
@@ -78,13 +124,22 @@ class NarutoWikiScraper:
         tag: bs4.Tag
         for tag in soup:
             if "href" in tag.attrs:
-                hrefs.append((f'{self.wiki_url}{tag["href"]}', tag["title"]))
+                hrefs.append((f'{NARUTO_WIKI_BASE_URL}{tag["href"]}', tag["title"]))
 
         return hrefs
 
     @staticmethod
     def extract_character_data(character_page: str, name: str, url: str) -> Character:
-        """Parse character page to extract character and associated data."""
+        """Parse character page to extract character and associated data.
+
+        Args:
+            character_page (str): The HTML content of the character page.
+            name (str): The name of the character.
+            url (str): The URL of the character page.
+
+        Returns:
+            Character: An instance of the Character model populated with the scraped data.
+        """
         soup = BeautifulSoup(
             character_page, "html.parser", parse_only=SoupStrainer("div")
         )
@@ -169,6 +224,11 @@ class NarutoWikiScraper:
         return character
 
     async def scrape_all_characters(self) -> None:
+        """Scrape and store all characters in the database if not already present.
+
+        This method checks the database for existing characters. If none are found,
+        it fetches all characters from the Naruto Wiki and stores them in the database.
+        """
         character_count = self.db.session.exec(select(Character)).all()
         if len(character_count) == 0:
             characters = await self.fetch_all_characters()

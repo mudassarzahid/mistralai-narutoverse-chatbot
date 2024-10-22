@@ -9,12 +9,13 @@ def get_logger(
     name: str = "default",
     level: int = logging.DEBUG,
 ) -> logging.Logger:
-    """
-    Get a logger with the specified name, log file, and level.
+    """Get a logger with the specified name, log file, and level.
+
+    Logs are streamed to the console as well as saved in a log file.
 
     Args:
         name (str): The name of the logger.
-        level (int): The logging level (e.g., logging.DEBUG, logging.INFO).
+        level (int): The logging level (e.g. logging.DEBUG, logging.INFO).
 
     Returns:
         logging.Logger: The configured logger.
