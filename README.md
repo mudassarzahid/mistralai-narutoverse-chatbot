@@ -41,24 +41,28 @@ To get a local copy up and running follow these simple steps.
 
 #### 1. Setup .env
 
-Create an `.env` file by copying `.env-example` and entering the missing values.
+Create an `.env` file, copy the contents of `.env-example` into the file, and add your Mistral API Key.
+
+```shell
+cd backend
+touch .env
+```
 
 #### 2. Create a virtual environment
 
 ```shell
-cd backend
 python3 -m venv .venv 
 source .venv/bin/activate
 ```
 
 #### 3. Install dependencies
 
+Important: Your Python version needs to be >=3.10.0 or else ChromaDB + SQLite may not work!
+
 ```shell
 # For recommended poetry installation instructions, see https://python-poetry.org/docs/
 # For running the demo locally, the following commands should suffice
-# alternative: pip install -r requirements.txt 
-# (for convenience, requirements.txt is auto-generated from pyproject.toml 
-# and used by Railway, the backend deployment tool)
+# alternative: pip install -r requirements.txt (for convenience, requirements.txt is auto-generated from pyproject.toml and used by Railway, the backend deployment tool)
 pip install poetry
 poetry install --no-root
 ```
@@ -71,14 +75,24 @@ uvicorn app.app:app --port 8080
 
 ### Frontend
 
-#### 1. Install dependencies
+#### 1. Setup .env
+
+Create an `.env.local` file containing the backend URL.
+
+```shell
+touch .env.local
+# add the following
+# NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+```
+
+#### 2. Install dependencies
 
 ```shell
 cd frontend
 yarn install
 ```
 
-#### 2. Run the webapp
+#### 3. Run the webapp
 
 ```shell
 yarn dev
