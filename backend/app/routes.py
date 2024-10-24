@@ -2,7 +2,7 @@ from http import HTTPStatus
 from typing import Any, AsyncGenerator
 
 from fastapi import APIRouter, Body, Request
-from langchain_core.messages import AIMessageChunk, HumanMessage
+from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
 from starlette.responses import StreamingResponse
 
 from database.database import Database
@@ -151,30 +151,27 @@ async def stream(
     async def event_stream() -> AsyncGenerator[str, None]:
         """Internal function to stream LLM responses in real-time."""
         agent = LlmWorkflow.from_thread_id(thread_id, character_id)
-        first, gathered = True, None
         last_msg_id, should_yield = None, False
         chat_history = agent.get_state(thread_id).values.get("chat_history")
 
         async for msg, metadata in agent.graph.astream(
-            {"input": query},
+            {
+                "input": query,
+                "chat_history": (
+                    chat_history
+                    if chat_history
+                    else [SystemMessage("Start conversation.")]
+                ),
+            },
             stream_mode="messages",
             config=agent.get_config(thread_id),
         ):
             # Filter out the summarization AIMessageChunk
-            if chat_history:
-                if last_msg_id and last_msg_id != msg.id:
-                    should_yield = True
-                last_msg_id = msg.id
-            else:
+            if last_msg_id and last_msg_id != msg.id:
                 should_yield = True
+            last_msg_id = msg.id
 
             if isinstance(msg, AIMessageChunk):
-                if first:
-                    gathered = msg
-                    first = False
-                else:
-                    gathered = gathered + msg
-
                 if msg.content and should_yield:
                     yield msg.content
 

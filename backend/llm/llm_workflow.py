@@ -92,24 +92,24 @@ class LlmWorkflow:
         Returns:
             StateGraph: The state graph representing the conversation flow.
         """
-        # System and history-aware prompts
-        system_prompt = Prompts.get_system_prompt(
-            self.character.name,
-            self._get_summarized_personality(),
-        )
-
-        # Question-answering prompt
-        qa_prompt = ChatPromptTemplate.from_messages(
+        # Instruct AI how to respond
+        system_prompt = ChatPromptTemplate.from_messages(
             [
-                ("system", system_prompt),
+                (
+                    "system",
+                    Prompts.get_system_prompt(
+                        self.character.name,
+                        self._get_summarized_personality(),
+                    ),
+                ),
                 MessagesPlaceholder(variable_name="chat_history"),
                 ("human", "{input}"),
             ]
         )
+        chat_chain = create_stuff_documents_chain(self.llm, system_prompt)
 
-        question_answer_chain = create_stuff_documents_chain(self.llm, qa_prompt)
-
-        contextualize_q_prompt = ChatPromptTemplate.from_messages(
+        # Contextualize user input for RAG
+        contextualize_prompt = ChatPromptTemplate.from_messages(
             [
                 MessagesPlaceholder("chat_history"),
                 ("human", "{input}"),
@@ -119,16 +119,12 @@ class LlmWorkflow:
                 ),
             ]
         )
-
-        # History-aware retriever
         history_aware_retriever = create_history_aware_retriever(
-            self.llm, self.retriever, contextualize_q_prompt
+            self.llm, self.retriever, contextualize_prompt
         )
 
         # RAG chain
-        rag_chain = create_retrieval_chain(
-            history_aware_retriever, question_answer_chain
-        )
+        rag_chain = create_retrieval_chain(history_aware_retriever, chat_chain)
 
         async def call_model(
             state: State, config: Optional[RunnableConfig] = None

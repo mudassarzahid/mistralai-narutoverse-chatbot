@@ -51,6 +51,7 @@ class Prompts:
         return (
             "Given the above conversation, generate ONLY a search query to "
             "look up in order to get information relevant to the conversation. "
+            f"Important: The pronoun 'You' refers to {character_name}. "
             "\nQuery:"
         )
 
