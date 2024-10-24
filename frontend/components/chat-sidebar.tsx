@@ -1,9 +1,17 @@
 import React, { useEffect } from "react";
-import { Listbox, ListboxItem, Avatar } from "@nextui-org/react";
+import {
+  Listbox,
+  ListboxItem,
+  Avatar,
+  Button,
+  Tooltip,
+} from "@nextui-org/react";
+import { Link } from "@nextui-org/link";
 
 import { fetchChatIds } from "@/api/fetch-chat-ids";
 import useCharacters from "@/hooks/use-characters";
 import ChatSidebarSkeleton from "@/components/skeletons/chat-sidebar";
+import { ComposeNewChatIcon } from "@/components/icons";
 
 interface ChatSidebarProps {
   threadId: string;
@@ -34,18 +42,17 @@ export default function ChatSidebar({
   if (loading) return <ChatSidebarSkeleton />;
 
   return (
-    <div className="w-full max-w-[260px] max-h-[100%] border-small px-2 mx-2 border-content1 bg-content1 rounded-xl">
+    <div className="w-full max-w-[260px] max-h-[100%]  px-2 mx-2 bg-content2 rounded-xl flex flex-col">
       <Listbox
         classNames={{
-          base: "max-w-xs p-0 gap-0 rounded-md max-h-full",
+          base: "max-w-xs p-0 gap-0 rounded-md max-h-full flex-grow",
           list: "overflow-scroll",
         }}
-        defaultSelectedKeys={[1]}
         items={filteredChats}
         label={"Chats"}
         selectionMode="single"
         topContent={
-          <div className="font-bold text-start self-start py-4 px-3 bg-content1 min-w-full rounded-md mb-2">
+          <div className="font-bold text-start self-start py-4 px-3 bg-content2 min-w-full rounded-md mb-2">
             Chats
           </div>
         }
@@ -57,7 +64,7 @@ export default function ChatSidebar({
             hideSelectedIcon
             shouldHighlightOnFocus
             className={
-              character.id === Number(characterId) ? "bg-content2" : ""
+              character.id === Number(characterId) ? "bg-content1" : ""
             }
             href={`/chat/${character.id}`}
             textValue={character.name}
@@ -76,6 +83,24 @@ export default function ChatSidebar({
           </ListboxItem>
         )}
       </Listbox>
+      <div className="mt-auto py-4 self-end">
+        <Link href={"/"}>
+          <Tooltip
+            className="capitalize"
+            color="foreground"
+            content={"New chat"}
+          >
+            <Button
+              isIconOnly
+              aria-label="Delete"
+              className="capitalize ml-auto mr-2"
+              variant={"bordered"}
+            >
+              <ComposeNewChatIcon />
+            </Button>
+          </Tooltip>
+        </Link>
+      </div>
     </div>
   );
 }

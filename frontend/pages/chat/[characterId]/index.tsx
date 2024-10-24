@@ -33,7 +33,7 @@ export default function ChatWithCharacterPage() {
               {deviceType !== "mobile" && (
                 <ChatSidebar characterId={character.id} threadId={threadId} />
               )}
-              <ChatUi characterData={character} />
+              <ChatUi character={character} threadId={threadId} />
             </div>
           )}
         </div>

@@ -3,7 +3,7 @@ export async function fetchStream(
   query: string,
   characterId: Number,
 ): Promise<Response> {
-  const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/chat/stream`;
+  const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/chats/stream`;
   const options: RequestInit = {
     method: "POST",
     headers: { "Content-Type": "application/json" },

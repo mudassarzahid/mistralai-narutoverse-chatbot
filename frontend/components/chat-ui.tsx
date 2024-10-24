@@ -8,40 +8,37 @@ import {
   CardFooter,
   Avatar,
   Spacer,
+  Tooltip,
 } from "@nextui-org/react";
 
 import { Character, Message } from "@/types";
-import { SendIcon } from "@/components/icons";
+import { ResetIcon, SendIcon } from "@/components/icons";
 import useWindowSize from "@/hooks/use-window-size";
-import useThreadId from "@/hooks/use-thread-id";
 import { fetchChatHistory } from "@/api/fetch-chat-history";
 import { fetchStream } from "@/api/fetch-stream";
 import { ChatUiSkeleton } from "@/components/skeletons/chat-ui";
 import { Sender } from "@/types/enums";
+import { deleteChat } from "@/api/delete-chat";
 
 interface ChatUiProps {
-  characterData: Character;
+  character: Character;
+  threadId: string;
 }
 
-export function ChatUi({ characterData }: ChatUiProps) {
+export function ChatUi({ character, threadId }: ChatUiProps) {
   const [message, setMessage] = useState<string>("");
   const [chat, setChat] = useState<Message[]>([]);
   const [isWriting, setIsWriting] = useState(false);
   const [loading, setLoading] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { width, height } = useWindowSize();
-  const threadId = useThreadId();
 
   useEffect(() => {
-    if (threadId) {
-      fetchChatHistory(threadId, Number(characterData.id)).then(
-        (chatHistory) => {
-          setChat(chatHistory);
-          setLoading(false);
-        },
-      );
-    }
-  }, [threadId, characterData.id]);
+    fetchChatHistory(threadId, Number(character.id)).then((chatHistory) => {
+      setChat(chatHistory);
+      setLoading(false);
+    });
+  }, []);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -49,7 +46,7 @@ export function ChatUi({ characterData }: ChatUiProps) {
     }
   }, [chat]);
 
-  const sendMessage = useCallback(async () => {
+  const handleSendMessage = useCallback(async () => {
     if (!message.trim() || isWriting) return;
 
     setIsWriting(true);
@@ -66,7 +63,7 @@ export function ChatUi({ characterData }: ChatUiProps) {
       const response = await fetchStream(
         threadId,
         newMessage.text,
-        characterData.id,
+        character.id,
       );
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
@@ -96,7 +93,11 @@ export function ChatUi({ characterData }: ChatUiProps) {
     } finally {
       setIsWriting(false);
     }
-  }, [message, threadId, characterData.id]);
+  }, [message, threadId, character.id]);
+
+  const handleDeleteChat = () => {
+    deleteChat(threadId, character.id).then((_) => setChat([]));
+  };
 
   if (loading) return <ChatUiSkeleton />;
 
@@ -107,11 +108,12 @@ export function ChatUi({ characterData }: ChatUiProps) {
           <Avatar
             isBordered
             className="w-14 h-14 text-large"
-            src={characterData.image_url}
+            src={character.image_url}
+            style={{ borderColor: "green" }}
           />
           <Spacer x={4} />
           <div className="text-start">
-            <div className="font-bold">{characterData.name}</div>
+            <div className="font-bold">{character.name}</div>
             <div>
               {isWriting ? (
                 <span className="loading">Writing</span>
@@ -120,6 +122,21 @@ export function ChatUi({ characterData }: ChatUiProps) {
               )}
             </div>
           </div>
+          <Tooltip
+            className="capitalize"
+            color="foreground"
+            content="Delete chat history"
+          >
+            <Button
+              isIconOnly
+              aria-label="Delete"
+              className="capitalize ml-auto mr-2"
+              variant={"bordered"}
+              onClick={handleDeleteChat}
+            >
+              <ResetIcon />
+            </Button>
+          </Tooltip>
         </CardHeader>
         <CardBody
           style={{
@@ -144,17 +161,30 @@ export function ChatUi({ characterData }: ChatUiProps) {
         </CardBody>
         <CardFooter>
           <Input
+            isDisabled={isWriting}
             placeholder="Type your message..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyUp={(e) =>
-              (e.key === "Enter" || e.code === "Enter") && sendMessage()
+              (e.key === "Enter" || e.code === "Enter") && handleSendMessage()
             }
           />
           <Spacer x={2} />
-          <Button isIconOnly aria-label="Send" onClick={sendMessage}>
-            <SendIcon />
-          </Button>
+          <Tooltip
+            className="capitalize"
+            color="foreground"
+            content="Send message"
+          >
+            <Button
+              isIconOnly
+              aria-label="Send"
+              className="bg-content2"
+              isDisabled={isWriting}
+              onClick={handleSendMessage}
+            >
+              <SendIcon />
+            </Button>
+          </Tooltip>
         </CardFooter>
       </Card>
     </div>
