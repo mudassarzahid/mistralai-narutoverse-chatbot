@@ -209,7 +209,7 @@ class LlmWorkflow:
         return cls.agents_store[thread_id][character_id]
 
     @classmethod
-    def get_character_ids_from_thread_id(cls, thread_id: str) -> list[int]:
+    def get_chat_character_ids(cls, thread_id: str) -> list[int]:
         """Get a list of character IDs associated with a specific thread ID.
 
         Args:
@@ -221,3 +221,18 @@ class LlmWorkflow:
         if thread_id not in cls.agents_store:
             return []
         return list(set(cls.agents_store[thread_id].keys()))
+
+    @classmethod
+    def delete_character_chat_history(cls, thread_id: str, character_id: int) -> None:
+        """Delete the chat history with a specific character for a thread.
+
+        Args:
+            thread_id (str): The ID of the conversation thread.
+            character_id (int): The ID of the character.
+
+        Returns:
+            list[int]: A list of character IDs associated with the thread.
+        """
+        if thread_id in cls.agents_store:
+            if character_id in cls.agents_store[thread_id]:
+                del cls.agents_store[thread_id][character_id]

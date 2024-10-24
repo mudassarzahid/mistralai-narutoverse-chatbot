@@ -148,7 +148,7 @@ class RAG:
             search_type="similarity_score_threshold",
             search_kwargs={
                 "k": k,
-                "score_threshold": 0.5,
+                "score_threshold": 0.6,
                 "filter": {"character_id": character_id},
             },
         )

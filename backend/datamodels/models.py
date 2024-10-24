@@ -101,28 +101,6 @@ class GetCharactersParams(QueryParams):
         return query_columns
 
 
-class GetChatHistoryParams(QueryParams):
-    """Model for query parameters when fetching chat history.
-
-    Attributes:
-        thread_id (str): The ID of the chat thread.
-        character_id (int): The ID of the character involved in the chat.
-    """
-
-    thread_id: str
-    character_id: int
-
-
-class GetChatsParams(QueryParams):
-    """Model for query parameters when fetching chat sessions.
-
-    Attributes:
-        thread_id (str): The ID of the chat thread.
-    """
-
-    thread_id: str
-
-
 class CharacterData(BaseModel):
     """Model representing character-related data.
 

@@ -11,8 +11,6 @@ from datamodels.models import (
     Character,
     CharacterCreate,
     GetCharactersParams,
-    GetChatHistoryParams,
-    GetChatsParams,
     Message,
 )
 from llm.llm_workflow import LlmWorkflow
@@ -92,46 +90,61 @@ def delete_character(character_id: int) -> dict:
     return {}
 
 
-@router.get("/chats/history")
-def get_chat_history(request: Request) -> list[Message]:
+@router.get("/chats/{thread_id}/{character_id}")
+def get_chat_history(thread_id: str, character_id: int) -> list[Message]:
     """Fetches the chat history for a specific thread and character.
 
     Args:
-        request (Request): The HTTP request containing thread_id and character_id.
+        thread_id (str): The ID of the client thread to fetch.
+        character_id (int): The ID of the character.
 
     Returns:
         dict[str, list[dict[str, Any]]]: A dictionary containing the chat history data.
     """
-    params = GetChatHistoryParams(**dict(request.query_params))
-    agent = LlmWorkflow.from_thread_id(params.thread_id, params.character_id)
-    chat_history = agent.get_state(params.thread_id).values.get("chat_history", [])
+    agent = LlmWorkflow.from_thread_id(thread_id, character_id)
+    chat_history = agent.get_state(thread_id).values.get("chat_history", [])
 
     return [
         Message(
             sender=Sender.human if isinstance(message, HumanMessage) else Sender.ai,
             text=message.content,
         )
-        for message in chat_history
+        for message in chat_history if not isinstance(message, SystemMessage)
     ]
 
 
-@router.get("/chats")
-def get_chats(request: Request) -> list[int]:
-    """Retrieves character IDs associated with a specific thread.
+@router.get("/chats/{thread_id}")
+def get_chats(thread_id: str) -> list[int]:
+    """Fetches character IDs associated with a specific thread.
 
     Args:
-        request (Request): The HTTP request containing query parameters for thread_id.
+        thread_id (str): The ID of the client thread to fetch.
 
     Returns:
         dict[str, list[int]]: A dictionary containing the character IDs.
     """
-    params = GetChatsParams(**dict(request.query_params))
-    character_ids = LlmWorkflow.get_character_ids_from_thread_id(params.thread_id)
+    character_ids = LlmWorkflow.get_chat_character_ids(thread_id)
 
     return character_ids
 
 
-@router.post("/chat/stream", status_code=HTTPStatus.ACCEPTED)
+@router.delete("/chats/{thread_id}/{character_id}", status_code=HTTPStatus.ACCEPTED)
+def delete_chat(thread_id: str, character_id: int) -> dict:
+    """Deletes chat with a character from a specific thread.
+
+    Args:
+        thread_id (str): The ID of the client thread.
+        character_id (int): The character ID.
+
+    Returns:
+        dict[str, list[int]]: A dictionary containing the character IDs.
+    """
+    LlmWorkflow.delete_character_chat_history(thread_id, character_id)
+
+    return {}
+
+
+@router.post("/chats/stream", status_code=HTTPStatus.ACCEPTED)
 async def stream(
     query: str = Body(),
     character_id: int = Body(),
