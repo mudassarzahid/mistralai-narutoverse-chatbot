@@ -1,4 +1,3 @@
-// components/character-search.tsx
 import { Autocomplete, AutocompleteItem, Avatar } from "@nextui-org/react";
 import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
