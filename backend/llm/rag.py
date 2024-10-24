@@ -143,6 +143,12 @@ class RAG:
             persist_directory=VECTOR_DB_DIR,
             embedding_function=MistralAIEmbeddings(model=MISTRAL_EMBED_MODEL),
         )
+
         return vectordb.as_retriever(
-            search_kwargs={"k": 2, "filter": {"character_id": character_id}}
+            search_type="similarity_score_threshold",
+            search_kwargs={
+                "k": k,
+                "score_threshold": 0.6,
+                "filter": {"character_id": character_id},
+            },
         )

@@ -45,7 +45,9 @@ def create_character(character_create: CharacterCreate) -> Character:
 
 
 @router.get(
-    "/characters", response_model=list[Character], response_model_exclude_defaults=True
+    "/characters",
+    response_model=list[Character],
+    response_model_exclude_defaults=True,
 )
 def get_characters(request: Request) -> list[dict[str, Any]]:
     """Fetches a list of characters based on the provided parameters.
@@ -90,7 +92,7 @@ def delete_character(character_id: int) -> dict:
     return {}
 
 
-@router.get("/chat/history")
+@router.get("/chats/history")
 def get_chat_history(request: Request) -> list[Message]:
     """Fetches the chat history for a specific thread and character.
 
@@ -106,7 +108,7 @@ def get_chat_history(request: Request) -> list[Message]:
 
     return [
         Message(
-            sender=Sender.user if isinstance(message, HumanMessage) else Sender.bot,
+            sender=Sender.human if isinstance(message, HumanMessage) else Sender.ai,
             text=message.content,
         )
         for message in chat_history

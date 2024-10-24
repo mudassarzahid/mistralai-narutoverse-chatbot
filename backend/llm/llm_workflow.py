@@ -98,14 +98,25 @@ class LlmWorkflow:
             self._get_summarized_personality(),
         )
 
+        # Question-answering prompt
+        qa_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", "{input}"),
+            ]
+        )
+
+        question_answer_chain = create_stuff_documents_chain(self.llm, qa_prompt)
+
         contextualize_q_prompt = ChatPromptTemplate.from_messages(
             [
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
                 (
                     "system",
                     Prompts.get_contextualize_q_system_prompt(self.character.name),
                 ),
-                MessagesPlaceholder("chat_history"),
-                ("human", "{input}"),
             ]
         )
 
@@ -113,18 +124,6 @@ class LlmWorkflow:
         history_aware_retriever = create_history_aware_retriever(
             self.llm, self.retriever, contextualize_q_prompt
         )
-
-        # Question-answering prompt
-        qa_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", system_prompt),
-                MessagesPlaceholder("chat_history"),
-                ("human", "{input}"),
-            ]
-        )
-
-        # Chain for question-answering
-        question_answer_chain = create_stuff_documents_chain(self.llm, qa_prompt)
 
         # RAG chain
         rag_chain = create_retrieval_chain(
@@ -147,7 +146,7 @@ class LlmWorkflow:
 
             return {
                 "chat_history": [
-                    HumanMessage(state["input"]),
+                    HumanMessage(response["input"]),
                     AIMessage(response["answer"]),
                 ],
                 "context": response["context"],

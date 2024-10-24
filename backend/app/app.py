@@ -46,6 +46,3 @@ async def validation_exception_handler(
             }
         ),
     )
-
-
-app.include_router(router)

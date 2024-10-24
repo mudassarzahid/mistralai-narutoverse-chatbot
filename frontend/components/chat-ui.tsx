@@ -29,7 +29,7 @@ export function ChatUi({ characterData }: ChatUiProps) {
   const [isWriting, setIsWriting] = useState(false);
   const [loading, setLoading] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const windowSize = useWindowSize();
+  const { width, height } = useWindowSize();
   const threadId = useThreadId();
 
   useEffect(() => {
@@ -53,12 +53,12 @@ export function ChatUi({ characterData }: ChatUiProps) {
     if (!message.trim() || isWriting) return;
 
     setIsWriting(true);
-    const newMessage: Message = { sender: Sender.USER, text: message.trim() };
+    const newMessage: Message = { sender: Sender.HUMAN, text: message.trim() };
 
     setChat((prevChat) => [...prevChat, newMessage]);
     setMessage("");
 
-    const characterPlaceholder: Message = { sender: Sender.BOT, text: "" };
+    const characterPlaceholder: Message = { sender: Sender.AI, text: "" };
 
     setChat((prevChat) => [...prevChat, characterPlaceholder]);
 
@@ -123,8 +123,8 @@ export function ChatUi({ characterData }: ChatUiProps) {
         </CardHeader>
         <CardBody
           style={{
-            height: `${windowSize.height * 0.6}px`,
-            width: `${windowSize.width * 0.6}px`,
+            height: `${height * 0.6}px`,
+            width: `${width * 0.6}px`,
             overflowY: "scroll",
           }}
         >
@@ -132,7 +132,7 @@ export function ChatUi({ characterData }: ChatUiProps) {
             <div
               key={index}
               className={`${
-                msg.sender === "bot"
+                msg.sender === Sender.AI
                   ? "bg-default-200 self-start"
                   : "bg-primary-300 self-end"
               } max-w-full rounded-3xl mb-3 px-4 py-3`}

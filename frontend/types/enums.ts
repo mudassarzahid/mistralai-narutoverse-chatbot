@@ -1,4 +1,4 @@
 export enum Sender {
-  USER = "user",
-  BOT = "bot",
+  HUMAN = "human",
+  AI = "ai",
 }

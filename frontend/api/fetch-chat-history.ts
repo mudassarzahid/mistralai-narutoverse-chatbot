@@ -9,7 +9,7 @@ export async function fetchChatHistory(
   characterId: number,
 ): Promise<ChatHistory> {
   const url =
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/chat/history` +
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/chats/history` +
     `?thread_id=${threadId}` +
     `&character_id=${characterId}`;
 

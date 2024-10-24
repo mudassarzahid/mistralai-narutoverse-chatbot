@@ -16,12 +16,12 @@ class Prompts:
         return (
             "<!--- Instruction Start -->\n"
             "## Task\n"
-            "Adopt the personality described below and respond to the last HUMAN "
-            "message in conversation history. The HUMAN is a total stranger to "
-            "you. Consider the complete conversation history, the character's "
-            "current location, situation, emotional state and goals when writing "
-            "a response. Consider the additional context ONLY if it is relevant "
-            "for the conversation.\n\n"
+            f"You are {character_name} and talking to a complete stranger. Adopt the "
+            "personality described below and respond to the last message in conversation "
+            "history. Consider the complete conversation history, the character's "
+            "current location, situation, emotional state, goals, personality and quirks "
+            "when writing a response. Consider the additional context ONLY if it is "
+            "relevant for the conversation.\n\n"
             "## Name\n"
             f"{character_name}\n"
             "## Personality\n"
@@ -51,8 +51,7 @@ class Prompts:
         return (
             "Given the above conversation, generate ONLY a search query to "
             "look up in order to get information relevant to the conversation. "
-            f"IMPORTANT: When HUMAN says 'You' it always refers to the character "
-            f"{character_name}!\nQuery:"
+            "\nQuery:"
         )
 
     @staticmethod

@@ -7,12 +7,14 @@ import ChatSidebar from "@/components/chat-sidebar";
 import ChatLayout from "@/layouts/chat";
 import useThreadId from "@/hooks/use-thread-id";
 import { fetchCharacter } from "@/api/fetch-character";
+import useWindowSize from "@/hooks/use-window-size";
 
 export default function ChatWithCharacterPage() {
   const router = useRouter();
   const { characterId } = router.query;
   const [character, setCharacter] = useState<Character>();
   const threadId = useThreadId();
+  const { deviceType } = useWindowSize();
 
   useEffect(() => {
     if (characterId && threadId) {
@@ -28,7 +30,9 @@ export default function ChatWithCharacterPage() {
         <div className="inline-block text-center justify-center">
           {character && threadId && (
             <div className="flex max-h-min">
-              <ChatSidebar characterId={character.id} threadId={threadId} />
+              {deviceType !== "mobile" && (
+                <ChatSidebar characterId={character.id} threadId={threadId} />
+              )}
               <ChatUi characterData={character} />
             </div>
           )}
