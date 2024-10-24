@@ -88,6 +88,7 @@ uvicorn app.app:app --port 8080
 Create an `.env.local` file and add the backend URL.
 
 ```shell
+cd frontend
 touch .env.local
 nano .env.local
 # add the following
@@ -97,7 +98,6 @@ nano .env.local
 #### 2. Install dependencies
 
 ```shell
-cd frontend
 yarn install
 ```
 
