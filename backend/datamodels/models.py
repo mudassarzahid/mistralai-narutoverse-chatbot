@@ -253,6 +253,8 @@ class State(TypedDict):
     """
 
     input: str
+    user_information: Annotated[str, "latest"]
     chat_history: Annotated[Sequence[BaseMessage], add_messages]
+    chat_summary: str
     context: str
     answer: str

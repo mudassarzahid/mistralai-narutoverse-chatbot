@@ -15,7 +15,7 @@ the `React`-based framework `Next.js`, along with `NextUI` as a modern component
    and saved. If the database already exists, this step is skipped.
    **Important note**: I got explicit permission from Fandom.com to scrape these sites. To avoid
    overloading NarutoWiki with too many requests and for convenience, I have pushed a pre-built
-   SQLite database with 50 characters to this repository.
+   SQLite database with 100 characters to this repository.
 2. **Embeddings**:
    When a character is selected, their wiki data is split into segments, embeddings are created,
    and stored in the `Chroma` vectorDB for RAG. If embeddings for that character already exist,
@@ -24,13 +24,13 @@ the `React`-based framework `Next.js`, along with `NextUI` as a modern component
 3. **Conversational AI**:
    Using a LangChain graph, the user can then chat with the character. The graph workflow
    consists of the following steps:
-    - Taking the user input
-    - Rephrasing the input by prompting the LLM to generate a query optimized for RAG
-    - Querying the vectorDB which returns the 2 most relevant documents
-    - Generating a response to the user by combining:
-        - The retrieved documents
-        - An instruction prompt including the character's personality
-        - A summary of the overall chat history
+    - Summarize the chat history
+    - Characterize the user based on chat history
+    - Run the RAG-LLM pipeline
+        - Prompt LLM to generate a query optimized for RAG based on user input & chat history
+        - Query the vectorDB which returns the 2 most relevant documents max
+        - Generate a response to the user by combining the retrieved documents, a (summarized) chat history, and an
+          instruction prompt including the user's (human) and character's (AI) personalities.
 
 The character (AI) responds and the LLM-generated tokens are streamed chunk
 by chunk to the frontend for a smooth ChatGPT-like experience.
@@ -88,7 +88,6 @@ uvicorn app.app:app --port 8080
 Create an `.env.local` file and add the backend URL.
 
 ```shell
-cd frontend
 touch .env.local
 nano .env.local
 # add the following
@@ -98,6 +97,7 @@ nano .env.local
 #### 2. Install dependencies
 
 ```shell
+cd frontend
 yarn install
 ```
 
@@ -106,17 +106,3 @@ yarn install
 ```shell
 yarn dev
 ```
-
-### Known problems and TODOs
-
-1. **Injection of irrelevant context**:
-   The retrieved documents can sometimes introduce irrelevant context which
-   the LLM includes into its response.
-    - Possible solution: Add a classifier to decide if the retrieved documents are relevant
-      (step between retrieving documents and generating LLM response). If not, don't use them.
-2. **Confused dialogue**:
-   LLM sometimes misattributes statements, especially with long (summarized) chat histories and
-   when pronouns like "I" and "You" are used, causing the character to confuse what the user
-   said, what the system prompt said, and what the character said.
-    - Possible solutions: Better prompting; substitute pronouns with explicit names to avoid
-      confusion.

@@ -7,12 +7,7 @@ from starlette.responses import StreamingResponse
 
 from database.database import Database
 from datamodels.enums import Sender
-from datamodels.models import (
-    Character,
-    CharacterCreate,
-    GetCharactersParams,
-    Message,
-)
+from datamodels.models import Character, CharacterCreate, GetCharactersParams, Message
 from llm.llm_workflow import LlmWorkflow
 from scraper.scraper import NarutoWikiScraper
 from utils.logger import get_logger
@@ -109,7 +104,8 @@ def get_chat_history(thread_id: str, character_id: int) -> list[Message]:
             sender=Sender.human if isinstance(message, HumanMessage) else Sender.ai,
             text=message.content,
         )
-        for message in chat_history if not isinstance(message, SystemMessage)
+        for message in chat_history
+        if not isinstance(message, SystemMessage)
     ]
 
 
@@ -164,28 +160,18 @@ async def stream(
     async def event_stream() -> AsyncGenerator[str, None]:
         """Internal function to stream LLM responses in real-time."""
         agent = LlmWorkflow.from_thread_id(thread_id, character_id)
-        last_msg_id, should_yield = None, False
-        chat_history = agent.get_state(thread_id).values.get("chat_history")
+        chat_history = agent.get_state(thread_id).values.get("chat_history", [])
+        count = 0 if len(chat_history) > 0 else 1
 
         async for msg, metadata in agent.graph.astream(
-            {
-                "input": query,
-                "chat_history": (
-                    chat_history
-                    if chat_history
-                    else [SystemMessage("Start conversation.")]
-                ),
-            },
+            {"input": query},
             stream_mode="messages",
-            config=agent.get_config(thread_id),
+            config=agent._get_config(thread_id),
         ):
-            # Filter out the summarization AIMessageChunk
-            if last_msg_id and last_msg_id != msg.id:
-                should_yield = True
-            last_msg_id = msg.id
-
             if isinstance(msg, AIMessageChunk):
-                if msg.content and should_yield:
+                if msg.usage_metadata:
+                    count += 1
+                if count == 3:
                     yield msg.content
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
