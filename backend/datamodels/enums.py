@@ -6,3 +6,4 @@ class Sender(str, Enum):
 
     human = "human"
     ai = "ai"
+    system = "system"

@@ -1,5 +1,6 @@
 from langchain_core.messages import HumanMessage
 
+from datamodels.enums import Sender
 from datamodels.models import Character, State
 
 
@@ -137,13 +138,13 @@ class Prompts:
         history = (
             [
                 (
-                    f"(HUMAN): {msg.content}"
+                    f"{Sender.human}: {msg.content}"
                     if isinstance(msg, HumanMessage)
-                    else f"({self.character.name}): {msg.content}"
+                    else f"{self.character.name}: {msg.content}"
                 )
                 for msg in state["chat_history"][last_n:]
             ]
             if len(state["chat_history"]) > 1
             else []
         )
-        return "\n".join(history + [f"(HUMAN): {state['input']}"])
+        return "\n".join(history + [f"{Sender.human}: {state['input']}"])

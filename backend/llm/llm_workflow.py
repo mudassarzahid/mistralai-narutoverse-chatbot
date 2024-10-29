@@ -11,6 +11,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import StateSnapshot
 
 from database.database import Database
+from datamodels.enums import Sender
 from datamodels.models import Character, State
 from llm.prompts import Prompts
 from llm.rag import RAG
@@ -172,13 +173,13 @@ class LlmWorkflow:
         system_prompt = ChatPromptTemplate.from_messages(
             [
                 (
-                    "system",
+                    Sender.system,
                     self.prompts.get_system_prompt(
                         self._get_summarized_personality_of_character(),
                     ),
                 ),
                 MessagesPlaceholder(variable_name="chat_history"),
-                ("human", "{input}"),
+                (Sender.human, "{input}"),
             ]
         )
         llm_large = self.get_llm(MISTRAL_LANGUAGE_MODEL_LARGE, streaming=True)
@@ -186,9 +187,9 @@ class LlmWorkflow:
 
         contextualize_prompt = ChatPromptTemplate.from_messages(
             [
-                ("human", "{input}"),
+                (Sender.human, "{input}"),
                 (
-                    "system",
+                    Sender.system,
                     self.prompts.get_contextualize_q_system_prompt(state),
                 ),
             ]

@@ -19,9 +19,13 @@ export function CharacterSearch() {
   const characterItems = useMemo(
     () =>
       (characters || []).map((character: Character) => (
+        // Uses router & <Link> for mobile compatibility
         <AutocompleteItem
           key={character.id.toString()}
           textValue={character.name}
+          onClick={() => {
+            router.push(`/chat/${character.id}`);
+          }}
         >
           <Link
             key={character.id.toString()}
@@ -66,6 +70,7 @@ export function CharacterSearch() {
             inputWrapper: "h-[48px]",
           },
         }}
+        isClearable={false}
         listboxProps={{
           hideSelectedIcon: true,
           itemClasses: {
