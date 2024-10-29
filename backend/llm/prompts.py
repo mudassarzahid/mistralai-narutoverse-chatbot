@@ -121,7 +121,7 @@ class Prompts:
             f"## Characterization of the human\n"
             f"{user_information}\n"
             "Update the human's personality description in a short and "
-            "concise way and based +ONLY on the available information."
+            "concise way and based ONLY on the available information."
         )
 
     def _format_chat_history(self, state: State, last_n=0) -> str:
