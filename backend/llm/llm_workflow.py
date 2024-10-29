@@ -2,7 +2,7 @@ from langchain.chains import create_history_aware_retriever, create_retrieval_ch
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables import Runnable, RunnableBinding, RunnableConfig
 from langchain_mistralai import ChatMistralAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.constants import END, START
@@ -156,7 +156,7 @@ class LlmWorkflow:
             user_information=response["user_information"],
         )
 
-    def _rag_chain(self, state: State, _config: RunnableConfig) -> Runnable:
+    def _rag_chain(self, state: State, _config: RunnableConfig) -> RunnableBinding:
         """Builds the RAG-LLM pipeline with retrieval and memory management.
 
         Sets up a retrieval-chat-chain for context-aware conversations
@@ -223,7 +223,7 @@ class LlmWorkflow:
         Returns:
             RunnableConfig: The configuration object for the conversation.
         """
-        return {"configurable": {"thread_id": thread_id}}
+        return RunnableConfig(configurable={"thread_id": thread_id})
 
     @classmethod
     def from_thread_id(cls, thread_id: str, character_id: int) -> "LlmWorkflow":

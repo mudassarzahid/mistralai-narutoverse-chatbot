@@ -161,7 +161,8 @@ async def stream(
         """Internal function to stream LLM responses in real-time."""
         agent = LlmWorkflow.from_thread_id(thread_id, character_id)
         chat_history = agent.get_state(thread_id).values.get("chat_history", [])
-        count = 0 if len(chat_history) > 0 else 1
+        n_message = 0 if len(chat_history) > 0 else 1
+        n_to_stream = 3  # stream only 3rd AI message (actual character response)
 
         async for msg, metadata in agent.graph.astream(
             {"input": query},
@@ -170,8 +171,8 @@ async def stream(
         ):
             if isinstance(msg, AIMessageChunk):
                 if msg.usage_metadata:
-                    count += 1
-                if count == 3:
+                    n_message += 1
+                if n_message == n_to_stream:
                     yield msg.content
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
