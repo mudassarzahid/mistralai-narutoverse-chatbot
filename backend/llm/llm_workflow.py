@@ -2,7 +2,7 @@ from langchain.chains import create_history_aware_retriever, create_retrieval_ch
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import Runnable, RunnableBinding, RunnableConfig
+from langchain_core.runnables import RunnableBinding, RunnableConfig
 from langchain_mistralai import ChatMistralAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.constants import END, START
@@ -60,9 +60,9 @@ class LlmWorkflow:
             CompiledStateGraph: The compiled workflow graph.
         """
         workflow = StateGraph(state_schema=State)
-        workflow.add_node("summarize_chat_history", self._summarize_chat_history)
-        workflow.add_node("characterize_user", self._characterize_user)
-        workflow.add_node("model", self._generate_response)
+        workflow.add_node("summarize_chat_history", self.summarize_chat_history)
+        workflow.add_node("characterize_user", self.characterize_user)
+        workflow.add_node("model", self.generate_response)
 
         workflow.add_edge(START, "summarize_chat_history")
         workflow.add_edge("summarize_chat_history", "characterize_user")
@@ -72,32 +72,25 @@ class LlmWorkflow:
         memory = MemorySaver()
         return workflow.compile(checkpointer=memory)
 
-    def _get_summarized_personality_of_character(self) -> str:
-        """Get or generate a summarized version of the character's personality.
+    def summarize_character_personality(self):
+        """Generate a summarized version of the character's personality.
 
-        If the summarized personality exists, returns it. Otherwise,
-        generates a summary using the language model and updates
+        Doesn't generate a personality summary if it already exists,
+        Otherwise, generates a summary using the LLM and updates
         the character in the database.
-
-        Returns:
-            str: The summarized personality of the character.
         """
-        if self.character.summarized_personality:
-            return self.character.summarized_personality
+        if not self.character.summarized_personality:
+            prompt = self.prompts.get_summarize_personality_prompt()
+            llm = self.get_llm(MISTRAL_LANGUAGE_MODEL_MEDIUM)
+            content = llm.invoke(prompt).content
+            self.db.update(
+                self.character,
+                {
+                    Character.summarized_personality.name: content,  # type: ignore
+                },
+            )
 
-        prompt = self.prompts.get_summarize_personality_prompt()
-        llm = self.get_llm(MISTRAL_LANGUAGE_MODEL_MEDIUM)
-        content = llm.invoke(prompt).content
-        self.db.update(
-            self.character,
-            {
-                Character.summarized_personality.name: content,  # type: ignore
-            },
-        )
-
-        return content
-
-    async def _summarize_chat_history(
+    async def summarize_chat_history(
         self, state: State, config: RunnableConfig
     ) -> State:
         """Summarizes the chat history to keep conversation context concise.
@@ -116,7 +109,7 @@ class LlmWorkflow:
 
         return state
 
-    async def _characterize_user(self, state: State, config: RunnableConfig) -> State:
+    async def characterize_user(self, state: State, config: RunnableConfig) -> State:
         """Generates a characterization of the user based on conversation data.
 
         Args:
@@ -133,7 +126,7 @@ class LlmWorkflow:
 
         return state
 
-    async def _generate_response(self, state: State, config: RunnableConfig) -> State:
+    async def generate_response(self, state: State, config: RunnableConfig) -> State:
         """Generates a response using the RAG chain and conversation context.
 
         Args:
@@ -143,7 +136,7 @@ class LlmWorkflow:
         Returns:
            State: The updated state with conversation context.
         """
-        response = await self._rag_chain(state, config).ainvoke(state, config)
+        response = await self.rag_chain(state, config).ainvoke(state, config)
         return State(
             input=state["input"],
             chat_history=[
@@ -156,7 +149,7 @@ class LlmWorkflow:
             user_information=response["user_information"],
         )
 
-    def _rag_chain(self, state: State, _config: RunnableConfig) -> RunnableBinding:
+    def rag_chain(self, state: State, _config: RunnableConfig) -> RunnableBinding:
         """Builds the RAG-LLM pipeline with retrieval and memory management.
 
         Sets up a retrieval-chat-chain for context-aware conversations
@@ -167,16 +160,14 @@ class LlmWorkflow:
             _config (RunnableConfig): Configuration for the runnable.
 
         Returns:
-            Runnable: The complete RAG-LLM conversation chain.
+            RunnableBinding: The complete RAG-LLM conversation chain.
         """
         # Instruct AI how to respond
         system_prompt = ChatPromptTemplate.from_messages(
             [
                 (
                     Sender.system,
-                    self.prompts.get_system_prompt(
-                        self._get_summarized_personality_of_character(),
-                    ),
+                    self.prompts.get_system_prompt(),
                 ),
                 MessagesPlaceholder(variable_name="chat_history"),
                 (Sender.human, "{input}"),
@@ -211,10 +202,10 @@ class LlmWorkflow:
         Returns:
             StateSnapshot: The current snapshot of the conversation state.
         """
-        return self.graph.get_state(self._get_config(thread_id))
+        return self.graph.get_state(self.get_config(thread_id))
 
     @staticmethod
-    def _get_config(thread_id: str) -> RunnableConfig:
+    def get_config(thread_id: str) -> RunnableConfig:
         """Generate a configuration object based on the thread ID.
 
         Args:

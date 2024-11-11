@@ -15,11 +15,8 @@ class Prompts:
         """
         self.character = character
 
-    def get_system_prompt(self, character_personality: str) -> str:
+    def get_system_prompt(self) -> str:
         """Generates a system prompt for impersonating a character based on context.
-
-        Args:
-            character_personality (str): A description of the character's personality.
 
         Returns:
             str: A system prompt that instructs the LLM to adopt
@@ -29,7 +26,7 @@ class Prompts:
             "## Character Name\n"
             f"{self.character.name}\n"
             "## Character Personality\n"
-            f"{character_personality}\n"
+            f"{self.character.summarized_personality}\n"
             "## Human Personality\n"
             "{user_information}"
             "## Context\n"
@@ -101,7 +98,7 @@ class Prompts:
             f"## Chat history between a human and {self.character.name}\n"
             f"{chat_summary}\n{formatted_history}\n"
             "## Task\n"
-            "Summarize the chat history."
+            "Summarize the chat history. Keep it short and concise."
         )
 
     def get_characterize_user_prompt(self, state: State) -> str:
