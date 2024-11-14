@@ -1,8 +1,9 @@
 ## MistralAI-based NarutoVerse Chatbot
 
 ![Example Chat](./public/example.gif)
-Example chat showcasing the Chatbot's ability to impersonate the character's personality, reference specific plot points
-thanks to querying the RAG database, and overall engage in a coherent conversation.
+<p align="center">Example chat showcasing the Chatbot's ability to impersonate the character's personality, reference specific plot points
+thanks to querying the RAG database, and overall engage in a coherent conversation.</p>
+
 
 ### Built With
 
