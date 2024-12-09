@@ -1,4 +1,4 @@
-## MistralAI-based NarutoVerse Chatbot
+## NarutoVerse Chatbot
 
 ![Example Chat](./public/example.gif)
 <p align="center">Example chat showcasing the Chatbot's ability to impersonate the character's personality, reference specific plot points
